@@ -1,28 +1,45 @@
 # OpsFlow Intake Board
 
-Static prototype for an internal optimization-request tool with two main surfaces:
+React + TypeScript rewrite of the internal optimization-request prototype. The
+app keeps the same two main surfaces:
 
-1. `Issue Channel` for detailed ticket creation
+1. `Issue Channel` for guided ticket intake
 2. `Kanban Board` for workflow tracking across:
    `Issue Optimization Request -> Review -> Revision -> Production -> Testing -> Deployment`
 
-## Files
+## Stack
 
-- `index.html` - app structure
-- `styles.css` - visual design and responsive layout
-- `app.js` - ticket creation, board rendering, drag/drop, localStorage persistence
+- `React` for rendering and UI state
+- `TypeScript` / `.tsx` for typed components
+- `Vite` for local development and browser bundling
+- `localStorage` for prototype persistence
 
-## How to run
+## Project layout
 
-Open [index.html](/Users/elisena/Documents/Codex/2026-04-28-i-am-working-for-a-company/index.html) directly in a browser, or from this folder run:
+- `src/main.tsx` - app bootstrap
+- `src/App.tsx` - UI and workflow logic
+- `src/types.ts` - shared workflow types
+- `src/lib.ts` - seed data, formatting, and attachment helpers
+- `styles.css` - visual system used by the TSX app
+- `tools/codex-skills/codex-skill.ts` - TS skill installer CLI
+
+## Run
 
 ```bash
-python3 -m http.server 8000
+npm install
+npm run dev
 ```
 
-Then visit `http://localhost:8000`.
+Then open the local Vite URL, usually `http://localhost:5173`.
 
-## Current prototype behavior
+## Checks
+
+```bash
+npm run check
+npm run build
+```
+
+## Current behavior
 
 - Guided ticket form with required detail fields
 - Spreadsheet and image attachment intake
@@ -32,14 +49,16 @@ Then visit `http://localhost:8000`.
 - Detail panel with activity log and manual updates
 - Local persistence via browser `localStorage`
 
-## Important limitation
+## Limitation
 
-Attachments are not uploaded to a real backend in this prototype. Image previews are stored only when small enough for `localStorage`. For production use, move attachments to object storage and store metadata plus signed URLs in a database.
+Attachments are still prototype-only. Small image previews can be stored in
+`localStorage`, but production use should move files to object storage and keep
+metadata plus signed URLs in a database.
 
-## Recommended next production steps
+## Recommended production next steps
 
 1. Add authentication and role-based permissions by division.
 2. Move tickets and activity logs to a real database.
 3. Store attachments in object storage instead of browser storage.
 4. Add comments, assignees, SLA dates, and notifications.
-5. Expose the same workflow through a REST or GraphQL API.
+5. Expose the workflow through a REST or GraphQL API.
