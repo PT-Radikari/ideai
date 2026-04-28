@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpsFlow Intake Board</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-block">
+          <p class="eyebrow">Internal Workflow Hub</p>
+          <h1>OpsFlow</h1>
+          <p class="brand-copy">
+            Intake and delivery tracking for optimization requests across BPO, MPO,
+            and supporting divisions.
+          </p>
+        </div>
+
+        <nav class="primary-nav" aria-label="Primary">
+          <button class="nav-button is-active" data-view-target="intake">
+            Issue Channel
+          </button>
+          <button class="nav-button" data-view-target="board">Kanban Board</button>
+        </nav>
+
+        <section class="sidebar-panel">
+          <p class="panel-label">Workflow</p>
+          <ol class="stage-list">
+            <li>Issue Optimization Request</li>
+            <li>Review</li>
+            <li>Revision</li>
+            <li>Production</li>
+            <li>Testing</li>
+            <li>Deployment</li>
+          </ol>
+        </section>
+
+        <section class="sidebar-panel">
+          <p class="panel-label">Intake Rules</p>
+          <ul class="rule-list">
+            <li>Every request needs a division and service line.</li>
+            <li>Requesters must explain the current manual process.</li>
+            <li>Images and spreadsheets can be attached to support analysis.</li>
+            <li>Tickets start in the intake column and move through review.</li>
+          </ul>
+        </section>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Automation Pipeline Tech</p>
+            <h2>Optimization Intake and Delivery Board</h2>
+          </div>
+          <div class="stat-grid" id="statGrid"></div>
+        </header>
+
+        <section class="view is-active" id="view-intake" aria-labelledby="intake-title">
+          <div class="hero-grid">
+            <article class="hero-card hero-card--accent">
+              <p class="eyebrow">Main Menu A</p>
+              <h3 id="intake-title">Issue a request through one guided channel</h3>
+              <p>
+                The form forces requesters to explain the problem, expected
+                outcome, urgency, and business impact before the work enters the
+                board.
+              </p>
+            </article>
+            <article class="hero-card">
+              <p class="eyebrow">Main Menu B</p>
+              <h3>Track active work on one kanban board</h3>
+              <p>
+                Operations, reviewers, builders, testers, and deployers all
+                share the same status model and ticket history.
+              </p>
+            </article>
+          </div>
+
+          <section class="form-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">New Ticket</p>
+                <h3>Create an optimization request</h3>
+              </div>
+              <button class="ghost-button" id="seedExampleButton" type="button">
+                Add Sample Request
+              </button>
+            </div>
+
+            <form id="ticketForm" class="ticket-form">
+              <label>
+                Ticket title
+                <input name="title" type="text" placeholder="Reduce manual reconciliation for BPO payroll" required />
+              </label>
+
+              <div class="field-row">
+                <label>
+                  Requesting division
+                  <input name="division" type="text" placeholder="BPO Operations" required />
+                </label>
+                <label>
+                  Service line
+                  <input name="service" type="text" placeholder="Payroll, MPO, Finance Ops" required />
+                </label>
+              </div>
+
+              <div class="field-row">
+                <label>
+                  Requested by
+                  <input name="requester" type="text" placeholder="Division lead or PIC" required />
+                </label>
+                <label>
+                  Priority
+                  <select name="priority" required>
+                    <option value="High">High</option>
+                    <option value="Medium" selected>Medium</option>
+                    <option value="Low">Low</option>
+                  </select>
+                </label>
+              </div>
+
+              <label>
+                Current manual process
+                <textarea
+                  name="currentProcess"
+                  rows="4"
+                  placeholder="Describe the current workflow, handoffs, spreadsheets, approvals, and bottlenecks."
+                  required
+                ></textarea>
+              </label>
+
+              <label>
+                Optimization request detail
+                <textarea
+                  name="requestDetail"
+                  rows="4"
+                  placeholder="What should be improved, automated, or simplified?"
+                  required
+                ></textarea>
+              </label>
+
+              <div class="field-row">
+                <label>
+                  Business impact
+                  <textarea
+                    name="businessImpact"
+                    rows="3"
+                    placeholder="Hours saved, reduced errors, SLA improvement, cost reduction."
+                    required
+                  ></textarea>
+                </label>
+                <label>
+                  Success metric
+                  <textarea
+                    name="successMetric"
+                    rows="3"
+                    placeholder="Example: cut manual processing time from 6 hours to 45 minutes."
+                    required
+                  ></textarea>
+                </label>
+              </div>
+
+              <label>
+                Attach spreadsheets and images
+                <input
+                  name="attachments"
+                  type="file"
+                  accept=".csv,.xlsx,.xls,.ods,image/*"
+                  multiple
+                />
+              </label>
+
+              <label>
+                Additional notes
+                <textarea
+                  name="notes"
+                  rows="3"
+                  placeholder="Dependencies, affected tools, deadlines, or known risks."
+                ></textarea>
+              </label>
+
+              <div class="form-actions">
+                <button class="primary-button" type="submit">Create Ticket</button>
+                <p class="form-note">
+                  New tickets start in <strong>Issue Optimization Request</strong>.
+                </p>
+              </div>
+            </form>
+          </section>
+        </section>
+
+        <section class="view" id="view-board" aria-labelledby="board-title">
+          <div class="board-toolbar">
+            <div>
+              <p class="eyebrow">Shared Board</p>
+              <h3 id="board-title">Optimization request kanban</h3>
+            </div>
+            <div class="filter-row">
+              <input id="searchInput" type="search" placeholder="Search title, division, service..." />
+              <select id="divisionFilter">
+                <option value="">All divisions</option>
+              </select>
+              <select id="priorityFilter">
+                <option value="">All priorities</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="board-layout">
+            <section class="board" id="boardColumns" aria-label="Kanban board"></section>
+
+            <aside class="detail-panel" id="detailPanel">
+              <div class="detail-empty">
+                <p class="eyebrow">Ticket Detail</p>
+                <h4>Select a card</h4>
+                <p>
+                  Open any ticket to review the request detail, attachments, activity,
+                  and next-stage actions.
+                </p>
+              </div>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <template id="ticketCardTemplate">
+      <article class="ticket-card" draggable="true">
+        <div class="ticket-card__meta">
+          <span class="ticket-code"></span>
+          <span class="priority-badge"></span>
+        </div>
+        <h4 class="ticket-title"></h4>
+        <p class="ticket-subtitle"></p>
+        <p class="ticket-summary"></p>
+        <div class="ticket-card__footer">
+          <span class="ticket-owner"></span>
+          <span class="ticket-attachments"></span>
+        </div>
+      </article>
+    </template>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>
