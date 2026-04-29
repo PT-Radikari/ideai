@@ -1,62 +1,1771 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OpsFlow — UI Kit</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpsFlow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <style>
-*, *::before, *::after { box-sizing: border-box; }
+/* ─── Tokens ─────────────────────────────────────────────────────── */
 :root {
-  --bg: #f1ead9;
-  --bg-deep: #0f1b24;
-  --bg-sidebar: #0b252f;
-  --panel: rgba(250,246,238,0.78);
-  --panel-strong: rgba(255,252,247,0.96);
-  --ink: #14212c;
-  --muted: #5f6d79;
-  --line: rgba(20,33,44,0.12);
-  --accent: #0d8a7c;
-  --accent-strong: #0a5c55;
-  --accent-soft: rgba(13,138,124,0.12);
-  --signal: #df6f2d;
-  --high: #a61b1b;
-  --medium: #b56a0f;
-  --low: #1f63d8;
-  --shadow: 0 28px 70px rgba(20,33,44,0.13);
-  --shadow-soft: 0 16px 38px rgba(20,33,44,0.08);
+  --bg:            #f1ead9;
+  --sidebar:       #0b252f;
+  --sidebar-deep:  #091d26;
+  --panel:         #fffaf2;
+  --panel-soft:    #f5efe4;
+  --board:         #faf5ec;
+  --col:           #f2ebe0;
+  --card:          #fffaf0;
+  --drawer:        #f5efe5;
+  --cluster-req:   rgba(247,216,200,0.55);
+  --cluster-build: rgba(212,228,196,0.55);
+  --cluster-rel:   rgba(216,210,235,0.55);
+
+  --ink:           #14212c;
+  --muted:         #5f6d79;
+  --dim:           #8a8a80;
+  --placeholder:   #9a9488;
+
+  --sk-out:        rgba(20,33,44,0.48);
+  --sk-in:         rgba(20,33,44,0.20);
+
+  --accent:        #0d8a7c;
+  --accent-s:      #0a5c55;
+  --accent-soft:   rgba(13,138,124,0.14);
+  --signal:        #df6f2d;
+  --signal-soft:   rgba(223,111,45,0.14);
+
+  --high:          #a61b1b;
+  --medium:        #b56a0f;
+  --low:           #1f63d8;
+
+  --sticky:        #efe1a7;
+  --sticky-bdr:    #776a36;
+  --sticky-ink:    #4d4215;
+
+  --shadow:        0 6px 20px rgba(20,33,44,0.10);
+  --shadow-sm:     0 2px 8px  rgba(20,33,44,0.07);
+
   --r-pill: 999px;
-  --r-lg: 30px;
-  --r-md: 22px;
-  --r-sm: 16px;
-  --serif: "Libre Baskerville","Iowan Old Style","Palatino Linotype",Georgia,serif;
-  --sans: "DM Sans","Avenir Next","Segoe UI",sans-serif;
+  --r-lg:   22px;
+  --r-md:   16px;
+  --r-sm:   12px;
+  --r-xs:   8px;
+
+  --serif: "Libre Baskerville","Iowan Old Style",Georgia,serif;
+  --sans:  "DM Sans","Avenir Next","Segoe UI",sans-serif;
 }
+
+/* ─── Reset ──────────────────────────────────────────────────────── */
+*,*::before,*::after { box-sizing: border-box; }
+html,body { margin: 0; padding: 0; }
 body {
-  margin: 0; min-height: 100vh;
-  font-family: var(--sans); color: var(--ink);
-  background:
-    radial-gradient(circle at top left, rgba(13,138,124,0.24), transparent 24%),
-    radial-gradient(circle at 85% 15%, rgba(223,111,45,0.18), transparent 18%),
-    radial-gradient(circle at bottom right, rgba(10,92,85,0.16), transparent 24%),
-    linear-gradient(135deg, #f7efdf 0%, #ece3d2 48%, #f6efe6 100%);
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--bg);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
-button, input, select, textarea { font: inherit; cursor: pointer; }
 h1,h2,h3,h4 { font-family: var(--serif); letter-spacing: -0.02em; margin: 0; }
 p { margin: 0; }
+button,input,select,textarea { font: inherit; }
+button { cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+
+/* ─── Sketch effect ──────────────────────────────────────────────── */
+/* every .sketch panel gets a faint rotated duplicate inner border */
+.sk {
+  position: relative;
+  border: 1.5px solid var(--sk-out);
+  border-radius: var(--r-lg);
+}
+.sk::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid var(--sk-in);
+  border-radius: inherit;
+  transform: rotate(0.7deg);
+  pointer-events: none;
+}
+.sk--strong  { border-width: 2px; border-radius: 28px; }
+.sk--strong::before { border-radius: 26px; }
+.sk--card    { border-radius: var(--r-sm); border-color: rgba(20,33,44,0.42); }
+.sk--card::before { border-radius: 10px; border-color: rgba(20,33,44,0.16); }
+.sk--field   { border-radius: var(--r-xs); border-width: 1.3px; }
+.sk--field::before { border-radius: 6px; }
+.sk--pill    { border-radius: var(--r-pill); border-width: 1.4px; }
+.sk--pill::before  { border-radius: calc(var(--r-pill) - 2px); }
+.sk--count   { border-radius: var(--r-pill); border-width: 1px; }
+.sk--count::before { border-radius: calc(var(--r-pill) - 2px); }
+.sk--col     { border-radius: var(--r-md); border-color: rgba(20,33,44,0.32); }
+.sk--col::before    { border-radius: 14px; border-color: rgba(20,33,44,0.12); }
+.sk--cluster { border-radius: 16px; border-color: rgba(20,33,44,0.24); }
+.sk--cluster::before { border-radius: 14px; }
+
+/* ─── App shell ──────────────────────────────────────────────────── */
+.app {
+  display: grid;
+  grid-template-columns: 258px 1fr;
+  min-height: 100vh;
+}
+
+/* ─── Sidebar ────────────────────────────────────────────────────── */
+.sidebar {
+  background: var(--sidebar);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 0 20px;
+  overflow: hidden;
+}
+
+.sidebar-brand {
+  padding: 0 22px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.sidebar-eyebrow {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  margin: 0 0 5px;
+}
+.sidebar-logo {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 700;
+  color: #f4bf66;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin: 0 0 3px;
+}
+.sidebar-tagline {
+  font-size: 11px;
+  color: rgba(255,255,255,0.38);
+  line-height: 1.4;
+}
+
+.sidebar-nav {
+  padding: 18px 12px;
+  flex: 1;
+}
+.nav-section-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  padding: 0 10px;
+  margin: 14px 0 6px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.62);
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  border-radius: var(--r-sm);
+  transition: background 130ms ease, color 130ms ease;
+  text-align: left;
+}
+.nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.88); }
+.nav-item.is-active {
+  background: var(--accent-soft);
+  color: #6fe5cb;
+}
+.nav-item .nav-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.nav-item.is-active .nav-icon { opacity: 1; }
+
+.sidebar-stats {
+  padding: 14px 20px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+.stat-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.stat-tile {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--r-xs);
+  padding: 8px 6px;
+  text-align: center;
+}
+.stat-tile strong {
+  display: block;
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: #f4bf66;
+  line-height: 1;
+  margin-bottom: 3px;
+}
+.stat-tile span {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+}
+
+.gallery-link {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: rgba(255,255,255,0.28);
+  padding: 4px 0;
+  transition: color 120ms ease;
+}
+.gallery-link:hover { color: rgba(255,255,255,0.55); }
+
+/* ─── Main ───────────────────────────────────────────────────────── */
+.main {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(13,138,124,0.18), transparent 28%),
+    radial-gradient(circle at 88% 12%, rgba(223,111,45,0.12), transparent 22%),
+    var(--bg);
+}
+
+/* ─── Topbar ─────────────────────────────────────────────────────── */
+.topbar {
+  padding: 18px 28px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1.5px solid var(--sk-out);
+  background: var(--panel);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.topbar-row1 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.topbar-title {
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.btn-primary {
+  height: 36px;
+  padding: 0 18px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 130ms ease;
+}
+.btn-primary:hover { background: var(--accent-s); }
+.btn-ghost {
+  height: 36px;
+  padding: 0 16px;
+  background: transparent;
+  color: var(--muted);
+  border: 1.3px solid rgba(20,33,44,0.28);
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  font-weight: 600;
+  transition: border-color 130ms ease, color 130ms ease;
+}
+.btn-ghost:hover { border-color: var(--sk-out); color: var(--ink); }
+
+.topbar-row2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.stage-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.stage-chip {
+  height: 30px;
+  padding: 0 13px;
+  background: var(--panel-soft);
+  color: var(--muted);
+  border: 1.3px solid rgba(20,33,44,0.28);
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 120ms ease;
+}
+.stage-chip:hover { border-color: var(--sk-out); color: var(--ink); }
+.stage-chip.is-active {
+  background: var(--ink);
+  color: var(--panel);
+  border-color: var(--ink);
+}
+
+.topbar-sep { flex: 1; min-width: 10px; }
+
+.filter-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.filter-input {
+  height: 32px;
+  padding: 0 11px;
+  background: var(--board);
+  border: 1.3px solid rgba(20,33,44,0.28);
+  border-radius: var(--r-xs);
+  font-size: 12.5px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+  min-width: 0;
+}
+.filter-input::placeholder { color: var(--placeholder); }
+.filter-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.filter-input--search { width: 180px; }
+.filter-input--select { width: 130px; appearance: none; }
+
+/* ─── Content area ───────────────────────────────────────────────── */
+.content { flex: 1; padding: 24px 28px 60px; position: relative; }
+
+/* ─── Board view ─────────────────────────────────────────────────── */
+#view-board { display: block; }
+#view-intake { display: none; }
+
+.board-outer {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-lg);
+}
+
+.board-inner {
+  background: var(--board);
+  padding: 22px 18px 22px;
+  overflow-x: auto;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(180px, 1fr));
+  gap: 10px;
+  min-width: 900px;
+}
+
+.col {
+  background: var(--col);
+  padding: 12px 10px 12px;
+  min-height: 600px;
+}
+.col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.col-name {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+.col-count {
+  background: var(--panel-soft);
+  width: 26px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.col-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.card {
+  background: var(--card);
+  padding: 12px 11px;
+  text-align: left;
+  width: 100%;
+  border: none;
+  transition: transform 130ms ease, box-shadow 130ms ease;
+}
+.card:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+.card.is-active {
+  box-shadow: 0 0 0 2px var(--accent), var(--shadow);
+}
+.card-code {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 2px;
+}
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+  margin-bottom: 6px;
+}
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-division {
+  font-size: 11px;
+  color: var(--muted);
+}
+.priority-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.priority-badge[data-p="High"]   { color: var(--high); }
+.priority-badge[data-p="Medium"] { color: var(--medium); }
+.priority-badge[data-p="Low"]    { color: var(--low); }
+
+/* ─── Drawer ─────────────────────────────────────────────────────── */
+.drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 360px;
+  background: var(--drawer);
+  border-left: 1.5px solid var(--sk-out);
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 230ms ease;
+  z-index: 10;
+}
+.drawer.is-open { transform: translateX(0); }
+
+.drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 20px 14px;
+  border-bottom: 1px solid rgba(20,33,44,0.12);
+  position: sticky;
+  top: 0;
+  background: var(--drawer);
+  z-index: 1;
+}
+.drawer-code {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.drawer-title-text {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.25;
+}
+.drawer-close {
+  background: transparent;
+  border: 1.3px solid rgba(20,33,44,0.28);
+  border-radius: var(--r-pill);
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--muted);
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+.drawer-close:hover { color: var(--ink); border-color: var(--sk-out); }
+
+.drawer-body { padding: 16px 20px 24px; }
+
+.dsec {
+  margin-bottom: 18px;
+}
+.dsec-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.dsec p {
+  font-size: 12.5px;
+  color: var(--ink);
+  line-height: 1.55;
+}
+.dsec-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.meta-chip {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(20,33,44,0.22);
+  background: var(--panel);
+  color: var(--muted);
+}
+.meta-chip[data-p="High"]   { background: rgba(166,27,27,0.1);  color: var(--high); }
+.meta-chip[data-p="Medium"] { background: rgba(181,106,15,0.1); color: var(--medium); }
+.meta-chip[data-p="Low"]    { background: rgba(31,99,216,0.1);  color: var(--low); }
+
+.drawer-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.dlabel {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.dlabel select,
+.dlabel textarea {
+  padding: 7px 9px;
+  border: 1.3px solid rgba(20,33,44,0.28);
+  border-radius: var(--r-xs);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 12.5px;
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+  resize: none;
+}
+.dlabel select:focus,
+.dlabel textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+.activity-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.act-item {
+  border-left: 2px solid rgba(20,33,44,0.15);
+  padding: 2px 0 10px 12px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.act-item:last-child { border-left-color: transparent; padding-bottom: 0; }
+.act-item strong { display: block; font-weight: 600; color: var(--ink); font-size: 12.5px; }
+
+.snapshot-grid {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 6px;
+}
+.snap-tile {
+  background: var(--panel);
+  border: 1px solid rgba(20,33,44,0.14);
+  border-radius: var(--r-xs);
+  padding: 8px 6px;
+  text-align: center;
+}
+.snap-tile strong {
+  display: block;
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1;
+  margin-bottom: 3px;
+}
+.snap-tile span {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.drawer-save-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+/* ─── Storyboard / Clusters (board bottom section) ───────────────── */
+.clusters-wrap {
+  margin-top: 16px;
+}
+.clusters-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.clusters-grid {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 12px;
+}
+.cluster {
+  background: var(--board);
+  padding: 12px 14px;
+  min-height: 100px;
+}
+.cluster--req   { background: var(--cluster-req); }
+.cluster--build { background: var(--cluster-build); }
+.cluster--rel   { background: var(--cluster-rel); }
+.cluster-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.cluster-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.cluster-stages {
+  display: flex;
+  gap: 5px;
+}
+.cluster-stage-pill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(20,33,44,0.12);
+  color: var(--muted);
+}
+.cluster-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ─── Intake view ────────────────────────────────────────────────── */
+#view-intake {
+  display: none;
+}
+
+.intake-wrap {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 22px;
+  align-items: start;
+}
+
+.start-here {
+  background: var(--panel);
+  padding: 24px 22px;
+  position: sticky;
+  top: 88px;
+}
+.start-here h3 {
+  font-size: 17px;
+  margin: 0 0 16px;
+  color: var(--ink);
+}
+.start-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+  counter-reset: steps;
+}
+.start-steps li {
+  counter-increment: steps;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--muted);
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(20,33,44,0.08);
+  line-height: 1.4;
+}
+.start-steps li::before {
+  content: counter(steps);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-s);
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.start-sticky {
+  background: var(--sticky);
+  border: 1px solid var(--sticky-bdr);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  color: var(--sticky-ink);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  transform: rotate(1.5deg);
+  box-shadow: 0 6px 14px -10px rgba(140,100,30,0.5);
+  position: relative;
+  margin-top: 18px;
+}
+.start-sticky::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(119,106,54,0.3);
+  border-radius: 10px;
+  transform: rotate(0.8deg);
+  pointer-events: none;
+}
+
+.intake-form-wrap {
+  background: var(--panel);
+  padding: 26px 28px 32px;
+}
+.intake-form-wrap h3 {
+  font-size: 19px;
+  margin: 0 0 20px;
+}
+
+.field-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.field-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.field-row-1 { margin-bottom: 14px; }
+
+.ifield {}
+.ifield-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+.ifield-wrap {
+  background: var(--board);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
+.ifield-wrap--tall { min-height: 120px; align-items: flex-start; padding-top: 12px; }
+.ifield-wrap--med  { min-height: 90px;  align-items: flex-start; padding-top: 12px; }
+.ifield-wrap input,
+.ifield-wrap textarea,
+.ifield-wrap select {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: var(--ink);
+  width: 100%;
+  padding: 0;
+  resize: none;
+  appearance: none;
+}
+.ifield-wrap input::placeholder,
+.ifield-wrap textarea::placeholder { color: var(--placeholder); }
+
+.title-rel { position: relative; }
+.use-tmpl-btn {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  height: 38px;
+  padding: 0 18px;
+  background: var(--accent-soft);
+  border: 1.3px solid var(--accent);
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-s);
+  transition: background 130ms ease;
+}
+.use-tmpl-btn:hover { background: rgba(13,138,124,0.22); }
+
+.intake-submit-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+.btn-primary-lg {
+  height: 44px;
+  padding: 0 28px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-pill);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  transition: background 130ms ease;
+}
+.btn-primary-lg:hover { background: var(--accent-s); }
+
+/* ─── Tracking snapshot (intake page) ───────────────────────────── */
+.tracking-wrap {
+  background: var(--panel-soft);
+  padding: 22px 24px 24px;
+  margin-top: 22px;
+  border-radius: var(--r-lg);
+}
+.tracking-wrap h4 {
+  font-size: 15px;
+  margin: 0 0 14px;
+  color: var(--ink);
+}
+.tracking-grid {
+  display: grid;
+  grid-template-columns: repeat(6,1fr);
+  gap: 10px;
+}
+.tracking-tile {
+  background: var(--card);
+  border: 1.3px solid rgba(20,33,44,0.22);
+  border-radius: var(--r-md);
+  padding: 14px 12px;
+}
+.tracking-tile::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(20,33,44,0.10);
+  border-radius: inherit;
+  transform: rotate(0.5deg);
+  pointer-events: none;
+}
+.tracking-tile { position: relative; }
+.tracking-stage {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.tracking-count {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.tracking-sub {
+  font-size: 10px;
+  color: var(--dim);
+}
+
+/* ─── Toast ──────────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--panel);
+  padding: 10px 20px;
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 180ms ease, transform 180ms ease;
+  pointer-events: none;
+  z-index: 200;
+  white-space: nowrap;
+}
+.toast.is-on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ─── Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 1280px) {
+  .board { grid-template-columns: repeat(3, minmax(160px, 1fr)); }
+  .clusters-grid { grid-template-columns: 1fr; }
+  .tracking-grid { grid-template-columns: repeat(3,1fr); }
+}
+@media (max-width: 960px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; flex-direction: row; flex-wrap: wrap; padding: 16px 20px; }
+  .sidebar-nav { padding: 0; display: flex; align-items: center; gap: 6px; }
+  .sidebar-stats { display: none; }
+  .intake-wrap { grid-template-columns: 1fr; }
+  .start-here { position: static; }
+  .tracking-grid { grid-template-columns: repeat(2,1fr); }
+  .drawer { width: 300px; }
+}
+@media (max-width: 680px) {
+  .topbar-row2 { flex-direction: column; align-items: flex-start; }
+  .field-row-3, .field-row-2 { grid-template-columns: 1fr; }
+  .drawer { position: fixed; top: 0; height: 100vh; }
+  .content { padding: 16px 14px 40px; }
+}
 </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel" src="tweaks-panel.jsx"></script>
-<script type="text/babel" src="Tokens.jsx"></script>
-<script type="text/babel" src="Sidebar.jsx"></script>
-<script type="text/babel" src="IntakeView.jsx"></script>
-<script type="text/babel" src="BoardView.jsx"></script>
-<script type="text/babel" src="App.jsx"></script>
+
+<div class="app">
+
+  <!-- ─── Sidebar ─────────────────────────────────────────────── -->
+  <nav class="sidebar" aria-label="Main navigation">
+    <div class="sidebar-brand">
+      <p class="sidebar-eyebrow">Process Studio</p>
+      <p class="sidebar-logo">OpsFlow</p>
+      <p class="sidebar-tagline">Optimization request pipeline</p>
+    </div>
+
+    <div class="sidebar-nav">
+      <p class="nav-section-label">Workspace</p>
+      <button class="nav-item is-active" data-view="board" type="button">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+          <rect x="2" y="3" width="4" height="14" rx="1.5"/>
+          <rect x="8" y="3" width="4" height="10" rx="1.5"/>
+          <rect x="14" y="3" width="4" height="12" rx="1.5"/>
+        </svg>
+        Pipeline Board
+      </button>
+      <button class="nav-item" data-view="intake" type="button">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+          <circle cx="10" cy="10" r="7.5"/>
+          <path d="M10 6.5v7M6.5 10h7"/>
+        </svg>
+        New Request
+      </button>
+
+      <p class="nav-section-label" style="margin-top:20px">Quick filters</p>
+      <button class="nav-item" data-stage-filter="request" type="button">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M3 5h14M6 10h8M9 15h2"/>
+        </svg>
+        Intake &amp; Review
+      </button>
+      <button class="nav-item" data-stage-filter="build" type="button">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M4 16l4-8 4 4 4-8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Build
+      </button>
+      <button class="nav-item" data-stage-filter="release" type="button">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M10 3v10M6 9l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M4 17h12"/>
+        </svg>
+        Release
+      </button>
+    </div>
+
+    <div class="sidebar-stats">
+      <div class="stat-row" id="sidebarStats"></div>
+      <a class="gallery-link" href="../index.html">
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M12 4l-8 6 8 6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Back to gallery
+      </a>
+    </div>
+  </nav>
+
+  <!-- ─── Main ─────────────────────────────────────────────────── -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-row1">
+        <h2 class="topbar-title" id="topbarTitle">Pipeline Board</h2>
+        <div class="topbar-actions">
+          <button class="btn-ghost" id="openIntakeBtn" type="button">New Request</button>
+          <button class="btn-primary" id="openBoardBtn" type="button" style="display:none">← Board</button>
+        </div>
+      </div>
+      <div class="topbar-row2" id="boardFilters">
+        <div class="stage-chips" id="stageChips">
+          <button class="stage-chip is-active" data-cluster="all" type="button">All stages</button>
+          <button class="stage-chip" data-cluster="request" type="button">Intake &amp; Review</button>
+          <button class="stage-chip" data-cluster="build" type="button">Build</button>
+          <button class="stage-chip" data-cluster="release" type="button">Release</button>
+        </div>
+        <div class="topbar-sep"></div>
+        <div class="filter-group">
+          <input class="filter-input filter-input--search" id="searchInput" type="search" placeholder="Search requests…" />
+          <select class="filter-input filter-input--select" id="priorityFilter">
+            <option value="">Priority — all</option>
+            <option>High</option>
+            <option>Medium</option>
+            <option>Low</option>
+          </select>
+          <select class="filter-input filter-input--select" id="divisionFilter">
+            <option value="">Division — all</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <!-- ─── Board view ──────────────────────────────────────── -->
+    <div class="content" id="view-board">
+
+      <!-- Kanban -->
+      <div class="board-outer sk sk--strong">
+        <div class="board-inner">
+          <div class="board" id="board"></div>
+        </div>
+
+        <!-- Slide-out drawer -->
+        <aside class="drawer" id="drawer" aria-label="Request detail">
+          <div class="drawer-head">
+            <div>
+              <p class="drawer-code" id="drawerCode"></p>
+              <h3 class="drawer-title-text" id="drawerTitleText">Select a card</h3>
+            </div>
+            <button class="drawer-close" id="drawerClose" type="button" aria-label="Close drawer">×</button>
+          </div>
+          <div class="drawer-body" id="drawerBody"></div>
+        </aside>
+      </div>
+
+      <!-- Cluster summary -->
+      <div class="clusters-wrap sk" style="background:var(--panel);padding:18px 20px;margin-top:18px;">
+        <p class="clusters-label">Cluster view</p>
+        <div class="clusters-grid">
+          <article class="cluster sk sk--cluster cluster--req">
+            <div class="cluster-head">
+              <span class="cluster-name">Request</span>
+              <div class="cluster-stages">
+                <span class="cluster-stage-pill">Issue Request</span>
+                <span class="cluster-stage-pill">Review</span>
+              </div>
+            </div>
+            <div class="cluster-cards" id="cluster-request"></div>
+          </article>
+          <article class="cluster sk sk--cluster cluster--build">
+            <div class="cluster-head">
+              <span class="cluster-name">Build</span>
+              <div class="cluster-stages">
+                <span class="cluster-stage-pill">Revision</span>
+                <span class="cluster-stage-pill">Production</span>
+              </div>
+            </div>
+            <div class="cluster-cards" id="cluster-build"></div>
+          </article>
+          <article class="cluster sk sk--cluster cluster--rel">
+            <div class="cluster-head">
+              <span class="cluster-name">Release</span>
+              <div class="cluster-stages">
+                <span class="cluster-stage-pill">Testing</span>
+                <span class="cluster-stage-pill">Deployment</span>
+              </div>
+            </div>
+            <div class="cluster-cards" id="cluster-release"></div>
+          </article>
+        </div>
+      </div>
+
+    </div><!-- /#view-board -->
+
+    <!-- ─── Intake view ──────────────────────────────────────── -->
+    <div class="content" id="view-intake">
+      <div class="intake-wrap">
+
+        <!-- Start Here -->
+        <aside class="start-here sk">
+          <h3>Start Here</h3>
+          <ol class="start-steps">
+            <li>Choose your division and service line</li>
+            <li>Describe today's manual process</li>
+            <li>Specify what needs to be improved</li>
+            <li>Attach files and evidence</li>
+            <li>Set priority and submit for review</li>
+          </ol>
+          <div class="start-sticky">
+            Use the "Use template" button to pre-fill a worked example and see what a good request looks like.
+          </div>
+        </aside>
+
+        <!-- Form -->
+        <div>
+          <div class="intake-form-wrap sk">
+            <h3>Request template</h3>
+            <form id="intakeForm" autocomplete="off">
+
+              <div class="field-row-3">
+                <div class="ifield">
+                  <label class="ifield-label" for="if-division">Division</label>
+                  <div class="ifield-wrap sk sk--field">
+                    <input id="if-division" name="division" type="text" placeholder="BPO / MPO / QA / Shared Services" required />
+                  </div>
+                </div>
+                <div class="ifield">
+                  <label class="ifield-label" for="if-service">Service line</label>
+                  <div class="ifield-wrap sk sk--field">
+                    <input id="if-service" name="service" type="text" placeholder="Payroll / Finance / Ops" required />
+                  </div>
+                </div>
+                <div class="ifield">
+                  <label class="ifield-label" for="if-priority">Priority</label>
+                  <div class="ifield-wrap sk sk--field">
+                    <select id="if-priority" name="priority" required>
+                      <option value="" disabled selected>Select priority</option>
+                      <option>High</option>
+                      <option>Medium</option>
+                      <option>Low</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field-row-1 title-rel">
+                <label class="ifield-label" for="if-title">Request title</label>
+                <div class="ifield-wrap sk sk--field ifield-wrap--med">
+                  <textarea id="if-title" name="title" rows="3" placeholder="Short, clear label for the optimization request" required></textarea>
+                </div>
+                <button class="use-tmpl-btn" type="button" id="useTemplateBtn">Use template</button>
+              </div>
+
+              <div class="field-row-2">
+                <div class="ifield">
+                  <label class="ifield-label" for="if-process">Current manual process</label>
+                  <div class="ifield-wrap sk sk--field ifield-wrap--tall">
+                    <textarea id="if-process" name="currentProcess" rows="5" placeholder="Describe how the team works today — handoffs, spreadsheets, pain points." required></textarea>
+                  </div>
+                </div>
+                <div class="ifield">
+                  <label class="ifield-label" for="if-detail">Optimization request</label>
+                  <div class="ifield-wrap sk sk--field ifield-wrap--tall">
+                    <textarea id="if-detail" name="requestDetail" rows="5" placeholder="What should be improved, automated, or simplified?" required></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field-row-3">
+                <div class="ifield">
+                  <label class="ifield-label" for="if-impact">Business impact</label>
+                  <div class="ifield-wrap sk sk--field ifield-wrap--med">
+                    <textarea id="if-impact" name="businessImpact" rows="3" placeholder="Hours saved, SLA improvement, error reduction."></textarea>
+                  </div>
+                </div>
+                <div class="ifield">
+                  <label class="ifield-label" for="if-metric">Success metric</label>
+                  <div class="ifield-wrap sk sk--field ifield-wrap--med">
+                    <textarea id="if-metric" name="metric" rows="3" placeholder="Measurable outcome when done."></textarea>
+                  </div>
+                </div>
+                <div class="ifield">
+                  <label class="ifield-label" for="if-attach">Attachments</label>
+                  <div class="ifield-wrap sk sk--field ifield-wrap--med">
+                    <textarea id="if-attach" name="attachments" rows="3" placeholder="Spreadsheet and image file names."></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <div class="intake-submit-row">
+                <button class="btn-ghost" type="button" id="cancelIntakeBtn">Cancel</button>
+                <button class="btn-primary-lg sk sk--pill" type="submit">Submit to Review</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Tracking snapshot -->
+          <div class="tracking-wrap sk">
+            <h4>Pipeline snapshot</h4>
+            <div class="tracking-grid" id="trackingGrid"></div>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /#view-intake -->
+
+  </div><!-- /.main -->
+</div><!-- /.app -->
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const STORAGE_KEY = "opsflow-v2";
+const STAGES = ["Issue Request","Review","Revision","Production","Testing","Deployment"];
+const STAGE_CLUSTER = {
+  "Issue Request": "request", "Review": "request",
+  "Revision": "build",        "Production": "build",
+  "Testing": "release",       "Deployment": "release",
+};
+const ASSIGNEES = ["Nadia Putri","Rizal Hidayat","Melissa Tan","Unassigned"];
+
+function seed() {
+  return [
+    {
+      id: crypto.randomUUID(), code: "OPT-420381",
+      title: "Automate QA evidence collection",
+      division: "QA", service: "Audit & Compliance", priority: "Medium",
+      stage: "Issue Request",
+      currentProcess: "Analysts compare spreadsheets against ERP exports by hand and flag mismatches over email.",
+      requestDetail: "Introduce a validation workflow before month-end review.",
+      businessImpact: "Cut validation time from 5h to 1h, fewer mismatch escapes.",
+      metric: "Validation time under 1h, <5% mismatch escape rate.",
+      attachments: "audit_sample.xlsx",
+      assignee: "Nadia Putri",
+      activity: [{ title:"Ticket created", detail:"Entered through guided intake.", at: new Date(Date.now()-1e3*60*60*8).toISOString() }],
+      createdAt: new Date(Date.now()-1e3*60*60*8).toISOString(),
+    },
+    {
+      id: crypto.randomUUID(), code: "OPT-420117",
+      title: "Attendance cleanup standardization",
+      division: "BPO", service: "Attendance Management", priority: "High",
+      stage: "Review",
+      currentProcess: "Supervisors update three different attendance sheets and a final summary file before payroll cutoff.",
+      requestDetail: "Group missing logs, suspicious overtime, and unresolved leave entries into one queue.",
+      businessImpact: "Cut pre-payroll cleanup from 7 touchpoints to 2.",
+      metric: "7 touchpoints → 2.",
+      attachments: "attendance_sample.xlsx",
+      assignee: "Rizal Hidayat",
+      activity: [
+        { title:"Review started", detail:"Business analyst validating scope.", at: new Date(Date.now()-1e3*60*40).toISOString() },
+        { title:"Ticket created", detail:"Entered through guided intake.", at: new Date(Date.now()-1e3*60*60*18).toISOString() },
+      ],
+      createdAt: new Date(Date.now()-1e3*60*60*18).toISOString(),
+    },
+    {
+      id: crypto.randomUUID(), code: "OPT-419998",
+      title: "Payroll reconciliation tool",
+      division: "MPO", service: "Payroll", priority: "High",
+      stage: "Production",
+      currentProcess: "Manual export and matching across 4 systems.",
+      requestDetail: "Auto-match line items and surface only mismatches.",
+      businessImpact: "Reduce close cycle by 1.5 days.",
+      metric: "Close cycle 1.5 days shorter.",
+      attachments: "payroll_export.csv",
+      assignee: "Melissa Tan",
+      activity: [{ title:"Build started", detail:"Workflow accepted after revision.", at: new Date(Date.now()-1e3*60*120).toISOString() }],
+      createdAt: new Date(Date.now()-1e3*60*60*36).toISOString(),
+    },
+    {
+      id: crypto.randomUUID(), code: "OPT-419800",
+      title: "Invoice validation logic",
+      division: "MPO", service: "Invoice Reconciliation", priority: "Medium",
+      stage: "Revision",
+      currentProcess: "Email-based mismatch flagging between teams.",
+      requestDetail: "Refactor flagging into a shared real-time queue.",
+      businessImpact: "Fewer mid-month escalations.",
+      metric: "Escalation rate down 60%.",
+      attachments: "",
+      assignee: "Nadia Putri",
+      activity: [{ title:"Sent for revision", detail:"Reviewer requested narrower scope.", at: new Date(Date.now()-1e3*60*200).toISOString() }],
+      createdAt: new Date(Date.now()-1e3*60*60*60).toISOString(),
+    },
+    {
+      id: crypto.randomUUID(), code: "OPT-419552",
+      title: "Client onboarding checklist",
+      division: "Shared Services", service: "Client Onboarding", priority: "Low",
+      stage: "Testing",
+      currentProcess: "Each team uses its own checklist and sends screenshots through chat.",
+      requestDetail: "Standardize the checklist and approvals into a single flow.",
+      businessImpact: "Cut onboarding coordination from 2 days to same-day.",
+      metric: "Onboarding time same-day.",
+      attachments: "checklist_v3.xlsx",
+      assignee: "Melissa Tan",
+      activity: [{ title:"Testing started", detail:"UAT team validating the flow.", at: new Date(Date.now()-1e3*60*25).toISOString() }],
+      createdAt: new Date(Date.now()-1e3*60*60*72).toISOString(),
+    },
+    {
+      id: crypto.randomUUID(), code: "OPT-419310",
+      title: "Vendor handoff tracker",
+      division: "Procurement", service: "Vendor Management", priority: "Low",
+      stage: "Deployment",
+      currentProcess: "Spreadsheet shared by email, owners unclear.",
+      requestDetail: "Live tracker with explicit owner per handoff.",
+      businessImpact: "Faster vendor escalation cycles.",
+      metric: "Escalation response time halved.",
+      attachments: "",
+      assignee: "Rizal Hidayat",
+      activity: [{ title:"Deployed", detail:"Tracker rolled out to procurement leads.", at: new Date(Date.now()-1e3*60*60*5).toISOString() }],
+      createdAt: new Date(Date.now()-1e3*60*60*120).toISOString(),
+    },
+  ];
+}
+
+/* ─── State ──────────────────────────────────────────────────── */
+const state = {
+  tickets: load(),
+  selectedId: null,
+  view: "board",
+  cluster: "all",
+  search: "",
+  priority: "",
+  division: "",
+};
+
+function load() {
+  try {
+    const s = localStorage.getItem(STORAGE_KEY);
+    if (s) { const p = JSON.parse(s); if (Array.isArray(p) && p.length) return p; }
+  } catch(e) {}
+  return seed();
+}
+function persist() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tickets)); } catch(e) {}
+}
+
+/* ─── Helpers ────────────────────────────────────────────────── */
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c]);
+}
+function fmtRel(iso) {
+  const d = Date.now() - new Date(iso).getTime();
+  const m = Math.round(d/60000);
+  if (m < 1)  return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m/60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.round(h/24)}d ago`;
+}
+function ticketMatches(t) {
+  if (state.cluster !== "all" && STAGE_CLUSTER[t.stage] !== state.cluster) return false;
+  if (state.priority && t.priority !== state.priority) return false;
+  if (state.division && t.division !== state.division) return false;
+  if (state.search) {
+    const q = state.search.toLowerCase();
+    if (![t.title,t.division,t.service,t.requestDetail,t.code,t.assignee].join(" ").toLowerCase().includes(q)) return false;
+  }
+  return true;
+}
+
+/* ─── Toast ──────────────────────────────────────────────────── */
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("is-on");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove("is-on"), 2400);
+}
+
+/* ─── Render: board ──────────────────────────────────────────── */
+function renderBoard() {
+  const board = document.getElementById("board");
+  board.innerHTML = "";
+  for (const stage of STAGES) {
+    const tickets = state.tickets.filter(t => t.stage === stage && ticketMatches(t));
+    const col = document.createElement("section");
+    col.className = "col sk sk--col";
+    col.setAttribute("aria-label", stage);
+    col.innerHTML = `
+      <div class="col-header">
+        <span class="col-name">${esc(stage)}</span>
+        <span class="col-count sk sk--count">${tickets.length}</span>
+      </div>
+      <div class="col-cards" data-stage="${esc(stage)}"></div>
+    `;
+    const cards = col.querySelector(".col-cards");
+    for (const t of tickets) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "card sk sk--card" + (t.id === state.selectedId ? " is-active" : "");
+      btn.title = "Click to inspect • Shift+click to advance stage";
+      btn.innerHTML = `
+        <p class="card-code">${esc(t.code)}</p>
+        <p class="card-title">${esc(t.title)}</p>
+        <div class="card-footer">
+          <span class="card-division">${esc(t.division)}</span>
+          <span class="priority-badge" data-p="${esc(t.priority)}">${esc(t.priority)}</span>
+        </div>
+      `;
+      btn.addEventListener("click", ev => {
+        if (ev.shiftKey) { advanceStage(t.id); return; }
+        state.selectedId = t.id;
+        renderBoard();
+        renderDrawer();
+        document.getElementById("drawer").classList.add("is-open");
+      });
+      cards.appendChild(btn);
+    }
+    board.appendChild(col);
+  }
+}
+
+/* ─── Render: clusters ───────────────────────────────────────── */
+function renderClusters() {
+  const groups = { request: [], build: [], release: [] };
+  for (const t of state.tickets) {
+    if (ticketMatches(t)) groups[STAGE_CLUSTER[t.stage] || "request"].push(t);
+  }
+  for (const [name, items] of Object.entries(groups)) {
+    const host = document.getElementById(`cluster-${name}`);
+    if (!host) continue;
+    host.innerHTML = "";
+    if (!items.length) {
+      host.innerHTML = `<p style="font-size:11px;color:var(--dim);padding:4px">No tickets in this cluster.</p>`;
+      continue;
+    }
+    for (const t of items) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "card sk sk--card" + (t.id === state.selectedId ? " is-active" : "");
+      btn.style.cssText = "width:100%;padding:9px 10px;";
+      btn.innerHTML = `
+        <p class="card-code" style="margin-bottom:2px">${esc(t.code)} · ${esc(t.stage)}</p>
+        <p class="card-title" style="font-size:12.5px">${esc(t.title)}</p>
+      `;
+      btn.addEventListener("click", () => {
+        state.selectedId = t.id;
+        renderBoard();
+        renderClusters();
+        renderDrawer();
+        document.getElementById("drawer").classList.add("is-open");
+      });
+      host.appendChild(btn);
+    }
+  }
+}
+
+/* ─── Render: drawer ─────────────────────────────────────────── */
+function renderDrawer() {
+  const t = state.tickets.find(x => x.id === state.selectedId);
+  const body = document.getElementById("drawerBody");
+  const titleEl = document.getElementById("drawerTitleText");
+  const codeEl = document.getElementById("drawerCode");
+
+  if (!t) {
+    codeEl.textContent = "";
+    titleEl.textContent = "Select a card";
+    body.innerHTML = renderSnapshotHtml();
+    return;
+  }
+
+  codeEl.textContent = t.code;
+  titleEl.textContent = t.title;
+
+  const stageOpts = STAGES.map(s => `<option${s===t.stage?" selected":""}>${esc(s)}</option>`).join("");
+  const assigneeOpts = ASSIGNEES.map(a => `<option${a===t.assignee?" selected":""}>${esc(a)}</option>`).join("");
+
+  body.innerHTML = `
+    <div class="dsec">
+      <div class="dsec-meta">
+        <span class="meta-chip" data-p="${esc(t.priority)}">${esc(t.priority)}</span>
+        <span class="meta-chip">${esc(t.stage)}</span>
+        <span class="meta-chip">${esc(t.division)}</span>
+        <span class="meta-chip">${esc(t.service)}</span>
+      </div>
+    </div>
+
+    <div class="dsec">
+      <p class="dsec-label">Current manual process</p>
+      <p>${esc(t.currentProcess || "—")}</p>
+    </div>
+    <div class="dsec">
+      <p class="dsec-label">Optimization request</p>
+      <p>${esc(t.requestDetail || "—")}</p>
+    </div>
+    ${t.businessImpact && t.businessImpact !== "—" ? `
+    <div class="dsec">
+      <p class="dsec-label">Business impact</p>
+      <p>${esc(t.businessImpact)}</p>
+    </div>` : ""}
+    ${t.metric && t.metric !== "—" ? `
+    <div class="dsec">
+      <p class="dsec-label">Success metric</p>
+      <p>${esc(t.metric)}</p>
+    </div>` : ""}
+    ${t.attachments ? `
+    <div class="dsec">
+      <p class="dsec-label">Attachments</p>
+      <p style="font-size:12px;color:var(--muted)">${esc(t.attachments)}</p>
+    </div>` : ""}
+
+    <div class="dsec" style="border-top:1px solid rgba(20,33,44,0.1);padding-top:16px;margin-top:16px">
+      <p class="dsec-label" style="margin-bottom:12px">Actions</p>
+      <div class="drawer-form-row">
+        <label class="dlabel">Stage
+          <select id="d-stage">${stageOpts}</select>
+        </label>
+        <label class="dlabel">Assign to
+          <select id="d-assignee">${assigneeOpts}</select>
+        </label>
+      </div>
+      <label class="dlabel" style="margin-top:10px">Add note
+        <textarea id="d-note" rows="3" placeholder="Review finding, blocker, revision note, or deployment detail."></textarea>
+      </label>
+      <div class="drawer-save-row">
+        <button class="btn-primary" id="drawerSaveBtn" type="button">Save update</button>
+      </div>
+    </div>
+
+    ${renderSnapshotHtml()}
+
+    <div class="dsec" style="border-top:1px solid rgba(20,33,44,0.1);padding-top:16px;margin-top:16px">
+      <p class="dsec-label" style="margin-bottom:10px">Activity</p>
+      <div class="activity-feed">
+        ${t.activity.map(a => `
+          <div class="act-item">
+            <strong>${esc(a.title)} · ${fmtRel(a.at)}</strong>
+            ${esc(a.detail)}
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+
+  document.getElementById("drawerSaveBtn").addEventListener("click", () => {
+    const tk = state.tickets.find(x => x.id === t.id);
+    if (!tk) return;
+    const newStage    = document.getElementById("d-stage").value;
+    const newAssignee = document.getElementById("d-assignee").value;
+    const note        = document.getElementById("d-note").value.trim();
+    const changes = [];
+    if (newStage !== tk.stage)       { changes.push(`Stage: ${tk.stage} → ${newStage}`); tk.stage = newStage; }
+    if (newAssignee !== tk.assignee) { changes.push(`Assigned to ${newAssignee}`); tk.assignee = newAssignee; }
+    if (note) changes.push(`Note: ${note}`);
+    if (!changes.length) { toast("Nothing to save"); return; }
+    tk.activity.unshift({ title:"Manual update", detail: changes.join(" · "), at: new Date().toISOString() });
+    persist();
+    renderAll();
+    toast("Update saved");
+  });
+}
+
+function renderSnapshotHtml() {
+  const counts = Object.fromEntries(STAGES.map(s => [s, 0]));
+  for (const t of state.tickets) counts[t.stage] = (counts[t.stage] || 0) + 1;
+  const total = state.tickets.length;
+  const inProg = state.tickets.filter(t => ["Revision","Production","Testing"].includes(t.stage)).length;
+  const done   = state.tickets.filter(t => t.stage === "Deployment").length;
+  return `
+    <div class="dsec" style="border-top:1px solid rgba(20,33,44,0.1);padding-top:16px;margin-top:16px">
+      <p class="dsec-label" style="margin-bottom:10px">Pipeline snapshot</p>
+      <div class="snapshot-grid">
+        <div class="snap-tile"><strong>${total}</strong><span>Total</span></div>
+        <div class="snap-tile"><strong>${counts["Issue Request"]+counts["Review"]}</strong><span>Intake</span></div>
+        <div class="snap-tile"><strong>${inProg}</strong><span>Build</span></div>
+        <div class="snap-tile"><strong>${done}</strong><span>Done</span></div>
+      </div>
+    </div>
+  `;
+}
+
+/* ─── Render: sidebar stats ──────────────────────────────────── */
+function renderSidebarStats() {
+  const total   = state.tickets.length;
+  const review  = state.tickets.filter(t => t.stage === "Review").length;
+  const prod    = state.tickets.filter(t => t.stage === "Production").length;
+  document.getElementById("sidebarStats").innerHTML = `
+    <div class="stat-tile"><strong>${total}</strong><span>Total</span></div>
+    <div class="stat-tile"><strong>${review}</strong><span>Review</span></div>
+    <div class="stat-tile"><strong>${prod}</strong><span>Build</span></div>
+  `;
+}
+
+/* ─── Render: division filter ────────────────────────────────── */
+function renderDivisionFilter() {
+  const sel = document.getElementById("divisionFilter");
+  const cur = state.division;
+  const divs = [...new Set(state.tickets.map(t => t.division))].sort();
+  sel.innerHTML = `<option value="">Division — all</option>` +
+    divs.map(d => `<option value="${esc(d)}"${d===cur?" selected":""}>${esc(d)}</option>`).join("");
+}
+
+/* ─── Render: tracking snapshot (intake view) ────────────────── */
+function renderTracking() {
+  const counts = Object.fromEntries(STAGES.map(s => [s, 0]));
+  for (const t of state.tickets) counts[t.stage] = (counts[t.stage] || 0) + 1;
+  const host = document.getElementById("trackingGrid");
+  if (!host) return;
+  host.innerHTML = STAGES.map(s => `
+    <div class="tracking-tile" style="position:relative">
+      <p class="tracking-stage">${esc(s)}</p>
+      <p class="tracking-count">${counts[s]}</p>
+      <p class="tracking-sub">ticket${counts[s]===1?"":"s"}</p>
+    </div>
+  `).join("");
+}
+
+/* ─── Render: all ────────────────────────────────────────────── */
+function renderAll() {
+  renderDivisionFilter();
+  renderBoard();
+  renderClusters();
+  renderDrawer();
+  renderSidebarStats();
+  renderTracking();
+}
+
+/* ─── View switching ─────────────────────────────────────────── */
+function setView(v) {
+  state.view = v;
+  document.getElementById("view-board").style.display  = v === "board"  ? "block" : "none";
+  document.getElementById("view-intake").style.display = v === "intake" ? "block" : "none";
+  document.getElementById("openIntakeBtn").style.display = v === "board"  ? "" : "none";
+  document.getElementById("openBoardBtn").style.display  = v === "intake" ? "" : "none";
+  document.getElementById("topbarTitle").textContent = v === "board" ? "Pipeline Board" : "New Request";
+  document.getElementById("boardFilters").style.display = v === "board" ? "" : "none";
+  document.querySelectorAll(".nav-item[data-view]").forEach(el => {
+    el.classList.toggle("is-active", el.dataset.view === v);
+  });
+  if (v === "intake") renderTracking();
+}
+
+/* ─── Advance stage ──────────────────────────────────────────── */
+function advanceStage(id) {
+  const t = state.tickets.find(x => x.id === id);
+  if (!t) return;
+  const i = STAGES.indexOf(t.stage);
+  if (i >= STAGES.length - 1) { toast("Already in final stage"); return; }
+  const prev = t.stage;
+  t.stage = STAGES[i+1];
+  t.activity.unshift({ title:`Moved: ${prev} → ${t.stage}`, detail:"Shifted via Shift+click.", at: new Date().toISOString() });
+  persist();
+  renderAll();
+  toast(`${t.title}: ${prev} → ${t.stage}`);
+}
+
+/* ─── Intake form ────────────────────────────────────────────── */
+document.getElementById("intakeForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const get = k => String(fd.get(k) ?? "").trim();
+  const division = get("division"), service = get("service"), priority = get("priority"),
+        title = get("title"), currentProcess = get("currentProcess"), requestDetail = get("requestDetail");
+  if (!division || !service || !priority || !title || !currentProcess || !requestDetail) return;
+  const ticket = {
+    id: crypto.randomUUID(),
+    code: "OPT-" + String(Date.now()).slice(-6),
+    title: title.length > 72 ? title.slice(0,72)+"…" : title,
+    division, service, priority,
+    stage: "Issue Request",
+    currentProcess, requestDetail,
+    businessImpact: get("businessImpact") || "—",
+    metric: get("metric") || "—",
+    attachments: get("attachments") || "",
+    assignee: "Unassigned",
+    activity: [{ title:"Ticket created", detail:"Submitted through guided intake.", at: new Date().toISOString() }],
+    createdAt: new Date().toISOString(),
+  };
+  state.tickets.unshift(ticket);
+  state.selectedId = ticket.id;
+  persist();
+  e.target.reset();
+  setView("board");
+  renderAll();
+  document.getElementById("drawer").classList.add("is-open");
+  toast("Submitted to Issue Request");
+});
+
+document.getElementById("useTemplateBtn").addEventListener("click", () => {
+  document.getElementById("if-division").value    = "MPO Finance";
+  document.getElementById("if-service").value     = "Invoice Reconciliation";
+  document.getElementById("if-priority").value    = "High";
+  document.getElementById("if-title").value       = "Automate invoice validation before MPO month-end close";
+  document.getElementById("if-process").value     = "Analysts compare vendor spreadsheets against ERP exports by hand and flag mismatches over email.";
+  document.getElementById("if-detail").value      = "Introduce a validation workflow that checks duplicate invoice numbers, missing PO references, and amount mismatches before month-end review.";
+  document.getElementById("if-impact").value      = "Reduce late close risk and prevent repeat rework across the finance operations team.";
+  document.getElementById("if-metric").value      = "Shrink validation time from 5 hours per batch to under 1 hour while reducing mismatch escapes by 80%.";
+  document.getElementById("if-attach").value      = "vendor_export.xlsx, erp_export.csv, screenshot_mismatch.png";
+  toast("Template applied — review and submit");
+});
+
+/* ─── View nav ───────────────────────────────────────────────── */
+document.querySelectorAll(".nav-item[data-view]").forEach(btn => {
+  btn.addEventListener("click", () => setView(btn.dataset.view));
+});
+document.getElementById("openIntakeBtn").addEventListener("click", () => setView("intake"));
+document.getElementById("openBoardBtn").addEventListener("click",  () => setView("board"));
+document.getElementById("cancelIntakeBtn").addEventListener("click", () => setView("board"));
+
+/* ─── Sidebar stage filters ──────────────────────────────────── */
+document.querySelectorAll(".nav-item[data-stage-filter]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    state.cluster = btn.dataset.stageFilter;
+    document.querySelectorAll(".stage-chip").forEach(c => c.classList.toggle("is-active", c.dataset.cluster === state.cluster));
+    document.querySelectorAll(".nav-item[data-stage-filter]").forEach(b => b.classList.toggle("is-active", b.dataset.stageFilter === state.cluster));
+    setView("board");
+    renderBoard();
+    renderClusters();
+  });
+});
+
+/* ─── Stage chips ────────────────────────────────────────────── */
+document.querySelectorAll(".stage-chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    state.cluster = chip.dataset.cluster;
+    document.querySelectorAll(".stage-chip").forEach(c => c.classList.toggle("is-active", c.dataset.cluster === state.cluster));
+    document.querySelectorAll(".nav-item[data-stage-filter]").forEach(b => b.classList.toggle("is-active", b.dataset.stageFilter === state.cluster));
+    renderBoard();
+    renderClusters();
+  });
+});
+
+/* ─── Filters ────────────────────────────────────────────────── */
+document.getElementById("searchInput").addEventListener("input",   e => { state.search   = e.target.value; renderBoard(); renderClusters(); });
+document.getElementById("priorityFilter").addEventListener("change", e => { state.priority = e.target.value; renderBoard(); renderClusters(); });
+document.getElementById("divisionFilter").addEventListener("change", e => { state.division = e.target.value; renderBoard(); renderClusters(); });
+
+/* ─── Drawer close ───────────────────────────────────────────── */
+document.getElementById("drawerClose").addEventListener("click", () => {
+  document.getElementById("drawer").classList.remove("is-open");
+  state.selectedId = null;
+  renderBoard();
+  renderClusters();
+});
+
+/* ─── Init ───────────────────────────────────────────────────── */
+renderAll();
+setView("board");
+</script>
 </body>
 </html>
