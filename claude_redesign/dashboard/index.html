@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpsFlow — Dashboard + board split</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --page: #f7f1e3;
+    --paper: #fffaf2;
+    --paper-soft: #f4eee3;
+    --paper-soft-2: #efe8db;
+    --board: #fffdf7;
+    --col: #f8f3e8;
+    --card: #fffaf0;
+    --ink: #1d1b18;
+    --ink-2: #26231d;
+    --ink-soft: #3a362e;
+    --ink-faint: #5f584c;
+    --ink-dim: #6a6357;
+    --ink-meta: #6b6458;
+    --ink-desc: #5e574c;
+    --placeholder: #8a8376;
+    --line: #221f1b;
+    --line-soft: rgba(38, 35, 29, 0.34);
+    --pill-mint: #e4ede7;
+    --pill-cream: #f4eee3;
+    --button-mint: #e4ece5;
+    --count-bg: #ebe3d4;
+    --sticky: #efe1a7;
+    --sticky-line: #776a36;
+    --sticky-ink: #4d4215;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page);
+    color: var(--ink);
+    min-height: 100vh;
+    line-height: 1.4;
+  }
+
+  /* The signature sketch effect: panels carry a faint duplicate inner border
+     rotated by ~0.8deg, drawn with a ::before pseudo-element. */
+  .sketch {
+    position: relative;
+    background: var(--paper);
+    border: 1.4px solid var(--line);
+    border-radius: 22px;
+  }
+  .sketch::before {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border: 1px solid var(--line-soft);
+    border-radius: inherit;
+    transform: rotate(0.8deg);
+    pointer-events: none;
+  }
+  .sketch--strong { border-width: 2.1px; border-radius: 28px; }
+  .sketch--strong::before { border-radius: 26px; }
+  .sketch--rounded { border-radius: 16px; }
+  .sketch--rounded::before { border-radius: 14px; }
+  .sketch--field { border-radius: 12px; border-width: 1.4px; }
+  .sketch--field::before { border-radius: 10px; }
+  .sketch--card { border-radius: 14px; border-color: #2a2620; border-width: 1.3px; }
+  .sketch--card::before { border-radius: 12px; border-color: rgba(42, 38, 32, 0.34); }
+  .sketch--pill { border-radius: 999px; border-width: 1.4px; }
+  .sketch--pill::before { border-radius: 997px; }
+  .sketch--count { border-radius: 999px; border-width: 1.1px; }
+  .sketch--count::before { border-radius: 997px; }
+
+  .frame {
+    max-width: 1400px;
+    margin: 32px auto;
+    padding: 36px 36px 56px;
+  }
+
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin: 0 0 4px;
+  }
+  .frame-title {
+    font-size: 26px;
+    font-weight: 600;
+    margin: 0 0 6px;
+    color: var(--ink);
+    letter-spacing: -0.005em;
+  }
+  .frame-subtitle {
+    font-size: 14px;
+    color: var(--ink-faint);
+    margin: 0 0 24px;
+  }
+
+  /* ---------- Topbar ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--paper-soft-2);
+    padding: 22px 28px;
+    margin-bottom: 28px;
+  }
+  .topbar h1 {
+    font-size: 28px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--ink);
+  }
+  .topbar-pills {
+    display: flex;
+    gap: 12px;
+    position: relative;
+    z-index: 1;
+  }
+  .pill {
+    border: none;
+    background: var(--pill-cream);
+    color: var(--ink);
+    font: 600 13px "Inter", sans-serif;
+    height: 40px;
+    padding: 0 24px;
+    cursor: pointer;
+    transition: filter 120ms ease;
+  }
+  .pill--mint { background: var(--pill-mint); }
+  .pill:hover { filter: brightness(1.03); }
+
+  /* ---------- Layout ---------- */
+  .layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 30px;
+    align-items: start;
+  }
+
+  /* ---------- Quick Intake ---------- */
+  .intake {
+    background: var(--paper-soft);
+    padding: 28px 22px 28px;
+    position: relative;
+  }
+  .intake h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 24px;
+    color: var(--ink);
+    position: relative;
+    z-index: 1;
+  }
+  .field { margin: 0 0 16px; position: relative; z-index: 1; }
+  .field-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin: 0 0 6px;
+  }
+  .field-input {
+    background: #fffdf7;
+    padding: 18px 14px;
+    color: var(--placeholder);
+    font: 400 12px "Inter", sans-serif;
+    min-height: 54px;
+  }
+  .field-input--tall { min-height: 120px; align-items: flex-start; padding-top: 14px; }
+  .field-input--med { min-height: 86px; align-items: flex-start; padding-top: 14px; }
+  .field-input input,
+  .field-input textarea {
+    background: transparent;
+    border: none;
+    outline: none;
+    font: inherit;
+    color: var(--ink);
+    width: 100%;
+    padding: 0;
+    resize: none;
+  }
+  .field-input input::placeholder,
+  .field-input textarea::placeholder { color: var(--placeholder); }
+
+  .field-input { display: flex; align-items: center; }
+
+  .submit-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 28px;
+    position: relative;
+    z-index: 1;
+  }
+  .submit-btn {
+    background: var(--button-mint);
+    border: none;
+    height: 48px;
+    padding: 0 36px;
+    font: 600 14px "Inter", sans-serif;
+    color: var(--ink);
+    cursor: pointer;
+    transition: filter 120ms ease;
+  }
+  .submit-btn:hover { filter: brightness(1.04); }
+
+  /* Sticky note */
+  .sticky {
+    background: var(--sticky);
+    border: 1.1px solid var(--sticky-line);
+    border-radius: 10px;
+    padding: 16px 18px;
+    color: var(--sticky-ink);
+    font: 600 13px/1.5 "Inter", sans-serif;
+    max-width: 220px;
+    transform: rotate(3deg);
+    box-shadow: 0 8px 18px -12px rgba(119, 106, 54, 0.5);
+    margin: 36px auto 0;
+    position: relative;
+  }
+  .sticky::before {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border: 1px solid rgba(119, 106, 54, 0.34);
+    border-radius: 8px;
+    transform: rotate(0.8deg);
+    pointer-events: none;
+  }
+
+  /* ---------- Active board ---------- */
+  .board-wrap {
+    background: var(--board);
+    padding: 28px 24px 28px;
+    position: relative;
+  }
+  .board-wrap h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 22px;
+    color: var(--ink);
+    position: relative;
+    z-index: 1;
+  }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .col {
+    background: var(--col);
+    padding: 14px 10px 14px;
+    min-height: 920px;
+  }
+  .col-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    position: relative;
+    z-index: 1;
+  }
+  .col-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-2);
+  }
+  .col-count {
+    background: var(--count-bg);
+    width: 28px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font: 600 11px "Inter", sans-serif;
+    color: var(--ink-2);
+  }
+
+  .col-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .card {
+    background: var(--card);
+    padding: 14px 12px 14px;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+    transition: transform 120ms ease, box-shadow 120ms ease;
+    position: relative;
+  }
+  .card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px -10px rgba(0, 0, 0, 0.18);
+  }
+  .card.is-selected {
+    box-shadow: 0 0 0 2px var(--button-mint), 0 6px 18px -10px rgba(0, 0, 0, 0.2);
+  }
+  .card-meta {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-meta);
+    margin: 0 0 4px;
+    position: relative;
+    z-index: 1;
+  }
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 6px;
+    line-height: 1.25;
+    position: relative;
+    z-index: 1;
+  }
+  .card-desc {
+    font-size: 11px;
+    color: var(--ink-desc);
+    margin: 0;
+    line-height: 1.45;
+    position: relative;
+    z-index: 1;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: #fffdf7;
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 200ms ease, transform 200ms ease;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .toast.is-visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @media (max-width: 1180px) {
+    .layout { grid-template-columns: 1fr; }
+    .board { grid-template-columns: repeat(3, 1fr); }
+    .col { min-height: 360px; }
+  }
+  @media (max-width: 700px) {
+    .topbar { flex-direction: column; gap: 16px; align-items: flex-start; }
+    .board { grid-template-columns: repeat(2, 1fr); }
+    .frame { padding: 24px 16px 40px; }
+  }
+</style>
+</head>
+<body>
+
+<main class="frame sketch sketch--strong">
+  <p class="eyebrow">Concept 1</p>
+  <h1 class="frame-title">Dashboard + board split</h1>
+  <p class="frame-subtitle">Feels like an operations control room. Intake is compact, board is primary.</p>
+
+  <!-- Topbar -->
+  <header class="topbar sketch">
+    <h1>OpsFlow dashboard</h1>
+    <div class="topbar-pills">
+      <button class="pill pill--mint sketch sketch--pill" type="button" data-view="intake" id="viewIntake">Issue Channel</button>
+      <button class="pill sketch sketch--pill" type="button" data-view="board" id="viewBoard">Kanban Board</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- Quick Intake -->
+    <aside class="intake sketch sketch--rounded" aria-labelledby="intakeTitle">
+      <h2 id="intakeTitle">Quick Intake</h2>
+      <form id="intakeForm" autocomplete="off">
+        <div class="field">
+          <label class="field-label" for="f-division">Division</label>
+          <div class="field-input sketch sketch--field">
+            <input id="f-division" name="division" type="text" placeholder="BPO / MPO / QA" required />
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="f-service">Service</label>
+          <div class="field-input sketch sketch--field">
+            <input id="f-service" name="service" type="text" placeholder="Payroll / Finance / Ops" required />
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="f-summary">Problem summary</label>
+          <div class="field-input field-input--tall sketch sketch--field">
+            <textarea id="f-summary" name="summary" rows="4" placeholder="Short explanation of the manual bottleneck." required></textarea>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="f-attachments">Attachments</label>
+          <div class="field-input field-input--med sketch sketch--field">
+            <textarea id="f-attachments" name="attachments" rows="2" placeholder="Add sheet or image"></textarea>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="f-impact">Why it matters</label>
+          <div class="field-input field-input--tall sketch sketch--field">
+            <textarea id="f-impact" name="impact" rows="4" placeholder="Hours saved, reduced errors, SLA gain."></textarea>
+          </div>
+        </div>
+        <div class="submit-wrap">
+          <button class="submit-btn sketch sketch--pill" type="submit">Submit Request</button>
+        </div>
+      </form>
+
+      <aside class="sticky">
+        Use this if you want quick intake on the left and work tracking on the right.
+      </aside>
+    </aside>
+
+    <!-- Active board -->
+    <section class="board-wrap sketch sketch--rounded" aria-labelledby="boardTitle">
+      <h2 id="boardTitle">Active board</h2>
+      <div class="board" id="board"></div>
+    </section>
+  </div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  const STORAGE_KEY = "opsflow-dashboard-v1";
+  const COLUMNS = ["Request", "Review", "Revision", "Production", "Testing", "Deploy"];
+
+  function seed() {
+    return [
+      { id: crypto.randomUUID(), col: "Request",    meta: "BPO • High",    title: "Attendance cleanup",     desc: "Awaiting business detail." },
+      { id: crypto.randomUUID(), col: "Request",    meta: "QA • Medium",   title: "Audit evidence intake",  desc: "Needs screenshots and sample sheet." },
+      { id: crypto.randomUUID(), col: "Review",     meta: "MPO • High",    title: "Invoice validation",     desc: "Analyst checks scope and field list." },
+      { id: crypto.randomUUID(), col: "Revision",   meta: "Shared • Low",  title: "Onboarding checklist",   desc: "Requester updates missing steps." },
+      { id: crypto.randomUUID(), col: "Production", meta: "BPO • High",    title: "Payroll reconciliation", desc: "Build in progress." },
+      { id: crypto.randomUUID(), col: "Testing",    meta: "Ops • Medium",  title: "Exception triage",       desc: "UAT running." },
+      { id: crypto.randomUUID(), col: "Deploy",     meta: "Ops • Low",     title: "Vendor tracker",         desc: "Released and monitored." },
+    ];
+  }
+
+  const state = { tickets: load(), selectedId: null };
+
+  function load() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return seed();
+  }
+
+  function persist() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tickets)); } catch (e) {}
+  }
+
+  function showToast(msg) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("is-visible");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => el.classList.remove("is-visible"), 2000);
+  }
+
+  function moveCard(id, dir) {
+    const t = state.tickets.find(x => x.id === id);
+    if (!t) return;
+    const i = COLUMNS.indexOf(t.col);
+    const j = i + dir;
+    if (j < 0 || j >= COLUMNS.length) return;
+    t.col = COLUMNS[j];
+    persist();
+    render();
+    showToast(`Moved to ${t.col}`);
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c]);
+  }
+
+  function render() {
+    const board = document.getElementById("board");
+    board.innerHTML = "";
+    for (const colName of COLUMNS) {
+      const colTickets = state.tickets.filter(t => t.col === colName);
+      const col = document.createElement("section");
+      col.className = "col sketch sketch--rounded";
+      col.setAttribute("aria-label", colName);
+      col.innerHTML = `
+        <header class="col-header">
+          <span class="col-name">${colName}</span>
+          <span class="col-count sketch sketch--count">${colTickets.length}</span>
+        </header>
+        <div class="col-cards"></div>
+      `;
+      const cards = col.querySelector(".col-cards");
+      for (const t of colTickets) {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "card sketch sketch--card" + (t.id === state.selectedId ? " is-selected" : "");
+        card.title = "Click to select • Shift+click to move forward • Alt+click to move back";
+        card.innerHTML = `
+          <p class="card-meta">${escapeHtml(t.meta)}</p>
+          <p class="card-title">${escapeHtml(t.title)}</p>
+          <p class="card-desc">${escapeHtml(t.desc)}</p>
+        `;
+        card.addEventListener("click", (ev) => {
+          if (ev.shiftKey) { moveCard(t.id, +1); return; }
+          if (ev.altKey) { moveCard(t.id, -1); return; }
+          state.selectedId = t.id === state.selectedId ? null : t.id;
+          render();
+        });
+        cards.appendChild(card);
+      }
+      board.appendChild(col);
+    }
+  }
+
+  document.getElementById("intakeForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const division = String(fd.get("division") ?? "").trim();
+    const service = String(fd.get("service") ?? "").trim();
+    const summary = String(fd.get("summary") ?? "").trim();
+    const impact = String(fd.get("impact") ?? "").trim();
+    if (!division || !service || !summary) {
+      showToast("Division, Service and Problem summary are required");
+      return;
+    }
+    const titleSrc = summary.length > 28 ? summary.slice(0, 28).replace(/\s+\S*$/, "") + "…" : summary;
+    const meta = `${division.split("/")[0].trim()} • Medium`;
+    const ticket = {
+      id: crypto.randomUUID(),
+      col: "Request",
+      meta,
+      title: titleSrc.charAt(0).toUpperCase() + titleSrc.slice(1),
+      desc: impact || "New request — awaiting review.",
+    };
+    state.tickets.unshift(ticket);
+    state.selectedId = ticket.id;
+    persist();
+    render();
+    e.target.reset();
+    showToast("Request submitted to Request column");
+  });
+
+  // Topbar pills are illustrative — they don't switch views in this single-screen demo.
+  document.getElementById("viewIntake").addEventListener("click", () => {
+    document.getElementById("intakeForm").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  document.getElementById("viewBoard").addEventListener("click", () => {
+    document.getElementById("board").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  render();
+</script>
+</body>
+</html>

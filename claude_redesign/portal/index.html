@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpsFlow — Request-centric queue</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --page: #f7f1e3;
+    --paper: #fffaf2;
+    --paper-soft: #f4eee3;
+    --paper-soft-2: #efe8db;
+    --inner-card: #fffdf7;
+    --inner-cream: #f6f1e7;
+    --tracking-bg: #f5efe5;
+    --stage-card: #fffaf0;
+    --ink: #1d1b18;
+    --ink-2: #26231d;
+    --ink-soft: #3a362e;
+    --ink-faint: #5f584c;
+    --ink-dim: #6a6357;
+    --ink-list: #5a5348;
+    --ink-meta: #665f54;
+    --placeholder: #8a8376;
+    --line: #221f1b;
+    --line-soft: rgba(38, 35, 29, 0.34);
+    --pill-mint: #e4ede7;
+    --pill-cream: #f4eee3;
+    --button-mint: #e4ece5;
+    --sticky: #efe1a7;
+    --sticky-line: #776a36;
+    --sticky-ink: #4d4215;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page);
+    color: var(--ink);
+    min-height: 100vh;
+    line-height: 1.4;
+  }
+
+  /* Sketch effect: every panel has a faint duplicate inner border rotated 0.8°. */
+  .sketch {
+    position: relative;
+    background: var(--paper);
+    border: 1.4px solid var(--line);
+    border-radius: 22px;
+  }
+  .sketch::before {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border: 1px solid var(--line-soft);
+    border-radius: inherit;
+    transform: rotate(0.8deg);
+    pointer-events: none;
+  }
+  .sketch--strong { border-width: 2.1px; border-radius: 28px; }
+  .sketch--strong::before { border-radius: 26px; }
+  .sketch--rounded { border-radius: 18px; }
+  .sketch--rounded::before { border-radius: 16px; }
+  .sketch--field { border-radius: 12px; border-width: 1.4px; }
+  .sketch--field::before { border-radius: 10px; }
+  .sketch--stage { border-radius: 16px; border-width: 1.2px; }
+  .sketch--stage::before { border-radius: 14px; }
+  .sketch--pill { border-radius: 999px; border-width: 1.4px; }
+  .sketch--pill::before { border-radius: 997px; }
+  .sketch--pill-thin { border-radius: 999px; border-width: 1.2px; }
+  .sketch--pill-thin::before { border-radius: 997px; }
+
+  .frame {
+    max-width: 1400px;
+    margin: 32px auto;
+    padding: 36px 36px 56px;
+  }
+
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin: 0 0 4px;
+  }
+  .frame-title {
+    font-size: 26px;
+    font-weight: 600;
+    margin: 0 0 6px;
+    color: var(--ink);
+    letter-spacing: -0.005em;
+  }
+  .frame-subtitle {
+    font-size: 14px;
+    color: var(--ink-faint);
+    margin: 0 0 24px;
+    max-width: 540px;
+  }
+
+  /* ---------- Topbar ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--paper-soft-2);
+    padding: 22px 28px;
+    margin-bottom: 28px;
+  }
+  .topbar h1 {
+    font-size: 28px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--ink);
+    position: relative;
+    z-index: 1;
+  }
+  .topbar-pills {
+    display: flex;
+    gap: 14px;
+    position: relative;
+    z-index: 1;
+  }
+  .pill {
+    border: none;
+    background: var(--pill-cream);
+    color: var(--ink);
+    font: 600 13px "Inter", sans-serif;
+    height: 40px;
+    padding: 0 24px;
+    cursor: pointer;
+    transition: filter 120ms ease;
+  }
+  .pill--mint { background: var(--pill-mint); }
+  .pill:hover { filter: brightness(1.03); }
+
+  /* ---------- Portal panel ---------- */
+  .portal {
+    background: var(--inner-card);
+    padding: 32px 30px 36px;
+    position: relative;
+  }
+  .portal h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 22px;
+    color: var(--ink);
+    position: relative;
+    z-index: 1;
+  }
+  .portal h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 16px;
+    color: var(--ink);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Top split: Start Here + Request template */
+  .top-split {
+    display: grid;
+    grid-template-columns: 370px 1fr;
+    gap: 26px;
+    margin-bottom: 28px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .start-here {
+    background: var(--inner-cream);
+    padding: 26px 28px;
+  }
+  .start-here ol {
+    margin: 0;
+    padding: 0 0 0 18px;
+    color: var(--ink-list);
+    font-size: 13px;
+    line-height: 1.85;
+    position: relative;
+    z-index: 1;
+  }
+  .start-here ol li { padding-left: 4px; }
+
+  .request-template {
+    background: var(--inner-cream);
+    padding: 26px 28px;
+  }
+  .three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.2fr;
+    gap: 16px;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+  }
+  .field { position: relative; z-index: 1; }
+  .field-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin: 0 0 8px;
+  }
+  .field-input {
+    background: var(--inner-card);
+    padding: 14px 14px;
+    color: var(--placeholder);
+    font: 400 12px "Inter", sans-serif;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+  }
+  .field-input--tall {
+    min-height: 126px;
+    align-items: flex-start;
+    padding-top: 14px;
+  }
+  .field-input--med {
+    min-height: 104px;
+    align-items: flex-start;
+    padding-top: 14px;
+  }
+  .field-input input,
+  .field-input textarea,
+  .field-input select {
+    background: transparent;
+    border: none;
+    outline: none;
+    font: inherit;
+    color: var(--ink);
+    width: 100%;
+    padding: 0;
+    resize: none;
+    appearance: none;
+  }
+  .field-input input::placeholder,
+  .field-input textarea::placeholder { color: var(--placeholder); }
+
+  /* Request title with overlapping Use template pill */
+  .title-row {
+    position: relative;
+    z-index: 1;
+  }
+  .title-row .field-input {
+    min-height: 86px;
+    padding-right: 200px;
+    align-items: flex-start;
+    padding-top: 16px;
+  }
+  .use-template-btn {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    background: var(--button-mint);
+    border: none;
+    height: 44px;
+    padding: 0 28px;
+    font: 600 13px "Inter", sans-serif;
+    color: var(--ink);
+    cursor: pointer;
+    transition: filter 120ms ease;
+    z-index: 2;
+  }
+  .use-template-btn:hover { filter: brightness(1.04); }
+
+  /* Two-column textareas */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 26px;
+    margin-bottom: 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Three-column smaller fields */
+  .three-col-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.05fr;
+    gap: 26px;
+    margin-bottom: 28px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Tracking snapshot */
+  .tracking {
+    background: var(--tracking-bg);
+    padding: 26px 28px 28px;
+    margin-bottom: 28px;
+    border-radius: 18px;
+  }
+  .tracking::before { border-radius: 16px; }
+  .stage-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+    position: relative;
+    z-index: 1;
+  }
+  .stage-card {
+    background: var(--stage-card);
+    padding: 16px 14px 14px;
+    cursor: default;
+  }
+  .stage-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 8px;
+    position: relative;
+    z-index: 1;
+  }
+  .stage-count {
+    font-size: 11px;
+    color: var(--ink-meta);
+    margin: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .stage-count strong {
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+
+  /* Footer: sticky + create */
+  .footer-row {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+    gap: 32px;
+    position: relative;
+    z-index: 1;
+  }
+  .sticky {
+    background: var(--sticky);
+    border: 1.1px solid var(--sticky-line);
+    border-radius: 10px;
+    padding: 16px 20px;
+    color: var(--sticky-ink);
+    font: 600 13px/1.5 "Inter", sans-serif;
+    max-width: 230px;
+    transform: rotate(3deg);
+    box-shadow: 0 8px 18px -12px rgba(119, 106, 54, 0.5);
+    position: relative;
+  }
+  .sticky::before {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border: 1px solid rgba(119, 106, 54, 0.34);
+    border-radius: 8px;
+    transform: rotate(0.8deg);
+    pointer-events: none;
+  }
+  .create-btn {
+    background: var(--button-mint);
+    border: none;
+    height: 48px;
+    padding: 0 36px;
+    font: 600 14px "Inter", sans-serif;
+    color: var(--ink);
+    cursor: pointer;
+    transition: filter 120ms ease;
+    align-self: center;
+  }
+  .create-btn:hover { filter: brightness(1.04); }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: #fffdf7;
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 200ms ease, transform 200ms ease;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .toast.is-visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @media (max-width: 1100px) {
+    .top-split { grid-template-columns: 1fr; }
+    .three-col { grid-template-columns: 1fr 1fr; }
+    .three-col-fields { grid-template-columns: 1fr; }
+    .stage-grid { grid-template-columns: repeat(3, 1fr); }
+    .title-row .field-input { padding-right: 14px; min-height: 110px; }
+    .use-template-btn { position: static; margin-top: 10px; height: 40px; }
+  }
+  @media (max-width: 700px) {
+    .topbar { flex-direction: column; gap: 16px; align-items: flex-start; }
+    .stage-grid { grid-template-columns: repeat(2, 1fr); }
+    .two-col { grid-template-columns: 1fr; }
+    .frame { padding: 24px 16px 40px; }
+    .footer-row { flex-direction: column; align-items: stretch; }
+  }
+</style>
+</head>
+<body>
+
+<main class="frame sketch sketch--strong">
+  <p class="eyebrow">Concept 3</p>
+  <h1 class="frame-title">Request-centric queue</h1>
+  <p class="frame-subtitle">Feels like a service portal. Stronger intake presence before work enters delivery.</p>
+
+  <!-- Topbar -->
+  <header class="topbar sketch">
+    <h1>OpsFlow request portal</h1>
+    <div class="topbar-pills">
+      <button class="pill pill--mint sketch sketch--pill" type="button" id="submitTopBtn">Submit Request</button>
+      <button class="pill sketch sketch--pill" type="button" id="trackTopBtn">Track Requests</button>
+    </div>
+  </header>
+
+  <!-- Portal-style intake -->
+  <section class="portal sketch sketch--rounded" aria-labelledby="portalTitle">
+    <h2 id="portalTitle">Portal-style intake</h2>
+
+    <form id="portalForm" autocomplete="off">
+      <div class="top-split">
+        <!-- Start Here -->
+        <aside class="start-here sketch sketch--rounded" aria-label="Start Here checklist">
+          <h3>Start Here</h3>
+          <ol>
+            <li>Choose division</li>
+            <li>Explain manual process</li>
+            <li>Attach files</li>
+            <li>Submit for review</li>
+          </ol>
+        </aside>
+
+        <!-- Request template -->
+        <section class="request-template sketch sketch--rounded" aria-label="Request template">
+          <h3>Request template</h3>
+          <div class="three-col">
+            <div class="field">
+              <label class="field-label" for="f-division">Division</label>
+              <div class="field-input sketch sketch--field">
+                <input id="f-division" name="division" type="text" placeholder="BPO / MPO / QA" required />
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="f-service">Service</label>
+              <div class="field-input sketch sketch--field">
+                <input id="f-service" name="service" type="text" placeholder="Payroll / Ops" required />
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="f-priority">Priority</label>
+              <div class="field-input sketch sketch--field">
+                <select id="f-priority" name="priority" required>
+                  <option value="" disabled selected>High / Medium / Low</option>
+                  <option>High</option>
+                  <option>Medium</option>
+                  <option>Low</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="title-row">
+            <label class="field-label" for="f-title">Request title</label>
+            <div class="field-input sketch sketch--field">
+              <textarea id="f-title" name="title" rows="3" placeholder="Short label for the optimization request" required></textarea>
+            </div>
+            <button class="use-template-btn sketch sketch--pill-thin" type="button" id="useTemplateBtn">Use template</button>
+          </div>
+        </section>
+      </div>
+
+      <!-- Process + detail -->
+      <div class="two-col">
+        <div class="field">
+          <label class="field-label" for="f-process">Current manual process</label>
+          <div class="field-input field-input--tall sketch sketch--field">
+            <textarea id="f-process" name="process" rows="5" placeholder="Describe how the team works today and where the pain appears." required></textarea>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="f-detail">Optimization request detail</label>
+          <div class="field-input field-input--tall sketch sketch--field">
+            <textarea id="f-detail" name="detail" rows="5" placeholder="Describe what should be improved, automated, or clarified." required></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Impact + metric + attachments -->
+      <div class="three-col-fields">
+        <div class="field">
+          <label class="field-label" for="f-impact">Business impact</label>
+          <div class="field-input field-input--med sketch sketch--field">
+            <textarea id="f-impact" name="impact" rows="4" placeholder="Hours saved, reduced errors, SLA improvement."></textarea>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="f-metric">Success metric</label>
+          <div class="field-input field-input--med sketch sketch--field">
+            <textarea id="f-metric" name="metric" rows="4" placeholder="Clear measure for improvement."></textarea>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="f-attach">Attachments</label>
+          <div class="field-input field-input--med sketch sketch--field">
+            <textarea id="f-attach" name="attachments" rows="4" placeholder="Spreadsheet + image upload area"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tracking snapshot -->
+      <section class="tracking sketch" aria-labelledby="trackingTitle">
+        <h3 id="trackingTitle">Tracking snapshot</h3>
+        <div class="stage-grid" id="stageGrid"></div>
+      </section>
+
+      <!-- Footer -->
+      <div class="footer-row">
+        <aside class="sticky">
+          Use this if the goal is strong intake discipline and a portal feel for all divisions.
+        </aside>
+        <button class="create-btn sketch sketch--pill" type="submit">Create Ticket</button>
+      </div>
+    </form>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  const STORAGE_KEY = "opsflow-portal-v1";
+  const STAGES = ["Issue Request", "Review", "Revision", "Production", "Testing", "Deployment"];
+
+  function seed() {
+    const out = [];
+    const sources = [
+      { stage: "Issue Request", division: "BPO",    service: "Attendance",   priority: "High",   title: "Attendance cleanup" },
+      { stage: "Issue Request", division: "QA",     service: "Audit",        priority: "Medium", title: "Audit evidence intake" },
+      { stage: "Issue Request", division: "Shared", service: "Onboarding",   priority: "Low",    title: "Onboarding intake" },
+      { stage: "Review",        division: "MPO",    service: "Invoices",     priority: "High",   title: "Invoice validation" },
+      { stage: "Review",        division: "BPO",    service: "Payroll",      priority: "Medium", title: "Payroll matching" },
+      { stage: "Revision",      division: "Shared", service: "Checklist",    priority: "Low",    title: "Onboarding checklist" },
+      { stage: "Revision",      division: "QA",     service: "Compliance",   priority: "Medium", title: "Evidence rework" },
+      { stage: "Production",    division: "BPO",    service: "Payroll",      priority: "High",   title: "Payroll reconciliation" },
+      { stage: "Production",    division: "MPO",    service: "Close",        priority: "Medium", title: "Month-end close helper" },
+      { stage: "Testing",       division: "Ops",    service: "Triage",       priority: "Medium", title: "Exception triage" },
+      { stage: "Testing",       division: "QA",     service: "Audit",        priority: "Low",    title: "Audit UAT" },
+      { stage: "Deployment",    division: "Ops",    service: "Vendor",       priority: "Low",    title: "Vendor tracker" },
+      { stage: "Deployment",    division: "BPO",    service: "Reporting",    priority: "Medium", title: "BPO reporting export" },
+    ];
+    for (const s of sources) {
+      out.push({
+        id: crypto.randomUUID(),
+        stage: s.stage,
+        division: s.division,
+        service: s.service,
+        priority: s.priority,
+        title: s.title,
+        process: "—",
+        detail: "—",
+        impact: "—",
+        metric: "—",
+        attachments: "",
+        createdAt: new Date(Date.now() - Math.random() * 1000 * 60 * 60 * 48).toISOString(),
+      });
+    }
+    return out;
+  }
+
+  function load() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return seed();
+  }
+  function persist() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tickets)); } catch (e) {}
+  }
+
+  const state = { tickets: load() };
+
+  function showToast(msg) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("is-visible");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => el.classList.remove("is-visible"), 2200);
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c]);
+  }
+
+  function renderSnapshot() {
+    const counts = Object.fromEntries(STAGES.map(s => [s, 0]));
+    for (const t of state.tickets) {
+      if (counts[t.stage] != null) counts[t.stage]++;
+    }
+    const host = document.getElementById("stageGrid");
+    host.innerHTML = STAGES.map(stage => `
+      <article class="stage-card sketch sketch--stage" data-stage="${escapeHtml(stage)}">
+        <p class="stage-name">${escapeHtml(stage)}</p>
+        <p class="stage-count"><strong>${counts[stage]}</strong> ticket${counts[stage] === 1 ? "" : "s"}</p>
+      </article>
+    `).join("");
+  }
+
+  function applyTemplate() {
+    document.getElementById("f-division").value = "MPO";
+    document.getElementById("f-service").value = "Invoice Reconciliation";
+    document.getElementById("f-priority").value = "High";
+    document.getElementById("f-title").value = "Automate invoice validation before MPO month-end close";
+    document.getElementById("f-process").value = "Analysts compare vendor spreadsheets against ERP exports by hand and flag mismatches over email.";
+    document.getElementById("f-detail").value = "Introduce a validation workflow that checks duplicate invoice numbers, missing PO references, and amount mismatches before month-end review.";
+    document.getElementById("f-impact").value = "Reduce late close risk and prevent repeat rework across the finance operations team.";
+    document.getElementById("f-metric").value = "Shrink validation time from 5 hours per batch to under 1 hour while reducing mismatch escapes by 80%.";
+    document.getElementById("f-attach").value = "vendor_export.xlsx, erp_export.csv, screenshot_mismatch.png";
+    showToast("Template applied — review and create");
+  }
+
+  document.getElementById("useTemplateBtn").addEventListener("click", applyTemplate);
+
+  document.getElementById("portalForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const get = k => String(fd.get(k) ?? "").trim();
+    const required = { division: get("division"), service: get("service"), priority: get("priority"), title: get("title"), process: get("process"), detail: get("detail") };
+    for (const [k, v] of Object.entries(required)) {
+      if (!v) { showToast(`Missing: ${k}`); return; }
+    }
+    const ticket = {
+      id: crypto.randomUUID(),
+      stage: "Issue Request",
+      division: required.division,
+      service: required.service,
+      priority: required.priority,
+      title: required.title,
+      process: required.process,
+      detail: required.detail,
+      impact: get("impact") || "—",
+      metric: get("metric") || "—",
+      attachments: get("attachments") || "",
+      createdAt: new Date().toISOString(),
+    };
+    state.tickets.unshift(ticket);
+    persist();
+    renderSnapshot();
+    e.target.reset();
+    showToast(`Ticket created — added to Issue Request (${state.tickets.filter(t => t.stage === "Issue Request").length} total)`);
+  });
+
+  document.getElementById("submitTopBtn").addEventListener("click", () => {
+    document.getElementById("f-division").focus({ preventScroll: false });
+    document.getElementById("f-division").scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+  document.getElementById("trackTopBtn").addEventListener("click", () => {
+    document.querySelector(".tracking").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  renderSnapshot();
+</script>
+</body>
+</html>

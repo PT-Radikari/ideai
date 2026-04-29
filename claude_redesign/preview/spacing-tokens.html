@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; font-family: "DM Sans", sans-serif; background: #f1ead9; padding: 20px; display: flex; flex-direction: column; gap: 14px; max-width: 500px; }
+  .label { font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #5f6d79; }
+  /* Radius tokens */
+  .radius-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+  .box { background: rgba(13,138,124,0.15); border: 1px solid rgba(13,138,124,0.3); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 9px; color: #0a5c55; font-weight: 700; text-align: center; }
+  /* Spacing */
+  .space-row { display: flex; gap: 0; align-items: flex-end; }
+  .space-block { background: #0d8a7c; }
+  .space-label { font-size: 9px; color: #5f6d79; text-align: center; margin-top: 4px; }
+</style>
+</head>
+<body>
+  <div class="label">Border radius tokens</div>
+  <div class="radius-row">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+      <div class="box" style="border-radius:999px;width:52px;height:52px;"></div>
+      <div class="label">pill</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+      <div class="box" style="border-radius:30px;"></div>
+      <div class="label">lg 30px</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+      <div class="box" style="border-radius:22px;"></div>
+      <div class="label">md 22px</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+      <div class="box" style="border-radius:16px;"></div>
+      <div class="label">sm 16px</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+      <div class="box" style="border-radius:12px;"></div>
+      <div class="label">xs 12px</div>
+    </div>
+  </div>
+  <div class="label" style="margin-top:4px;">Spacing scale</div>
+  <div class="space-row" style="gap:12px;align-items:flex-end;">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;"><div class="space-block" style="width:6px;height:6px;border-radius:2px;"></div><div class="label">xs 5.6px</div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;"><div class="space-block" style="width:11px;height:11px;border-radius:3px;"></div><div class="label">sm 11px</div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;"><div class="space-block" style="width:16px;height:16px;border-radius:4px;"></div><div class="label">md 16px</div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;"><div class="space-block" style="width:24px;height:24px;border-radius:5px;"></div><div class="label">lg 24px</div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;"><div class="space-block" style="width:32px;height:32px;border-radius:6px;"></div><div class="label">xl 32px</div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;"><div class="space-block" style="width:48px;height:48px;border-radius:8px;"></div><div class="label">2xl 48px</div></div>
+  </div>
+</body>
+</html>

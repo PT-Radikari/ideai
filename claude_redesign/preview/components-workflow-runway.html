@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; font-family: "DM Sans", sans-serif; background: #f1ead9; padding: 16px; }
+  .track { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .stage {
+    position: relative; padding: 0.85rem 0.9rem; border: 1px solid rgba(20,33,44,0.08);
+    border-radius: 18px; background: rgba(255,255,255,0.52); overflow: hidden;
+    display: grid; gap: 3px;
+  }
+  .stage::before { content:""; position:absolute; inset:0 auto 0 0; width:4px; background:transparent; }
+  .stage.active::before { background: linear-gradient(180deg,#df6f2d,#0d8a7c); }
+  .idx { font-size: 0.72rem; letter-spacing: 0.14em; color: #5f6d79; }
+  .name { font-size: 0.85rem; font-weight: 600; color: #14212c; }
+  .count { font-size: 0.78rem; color: #5f6d79; }
+</style>
+</head>
+<body>
+  <div class="track">
+    <div class="stage active"><span class="idx">01</span><strong class="name">Issue Opt. Request</strong><span class="count">5 tickets</span></div>
+    <div class="stage active"><span class="idx">02</span><strong class="name">Review</strong><span class="count">3 tickets</span></div>
+    <div class="stage"><span class="idx">03</span><strong class="name">Revision</strong><span class="count">0 tickets</span></div>
+    <div class="stage active"><span class="idx">04</span><strong class="name">Production</strong><span class="count">4 tickets</span></div>
+    <div class="stage active"><span class="idx">05</span><strong class="name">Testing</strong><span class="count">2 tickets</span></div>
+    <div class="stage"><span class="idx">06</span><strong class="name">Deployment</strong><span class="count">0 tickets</span></div>
+  </div>
+</body>
+</html>

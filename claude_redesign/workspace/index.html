@@ -1,0 +1,785 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpsFlow — Workspace with drawer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --page: #f7f1e3;
+    --paper: #fffaf2;
+    --paper-soft: #f4eee3;
+    --paper-soft-2: #efe8db;
+    --board-bg: #fffdf7;
+    --col: #f8f3e8;
+    --card: #fffaf0;
+    --drawer: #f6f0e6;
+    --ink: #1d1b18;
+    --ink-2: #26231d;
+    --ink-soft: #3a362e;
+    --ink-faint: #5f584c;
+    --ink-dim: #6a6357;
+    --ink-meta: #6b6458;
+    --ink-desc: #5e574c;
+    --ink-list-strong: #4f493f;
+    --ink-list: #554e43;
+    --placeholder: #8a8376;
+    --line: #221f1b;
+    --line-soft: rgba(38, 35, 29, 0.34);
+    --pill-mint: #e4ede7;
+    --pill-cream: #f4eee3;
+    --button-mint: #e4ece5;
+    --count-bg: #ebe3d4;
+    --sticky: #efe1a7;
+    --sticky-line: #776a36;
+    --sticky-ink: #4d4215;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page);
+    color: var(--ink);
+    min-height: 100vh;
+    line-height: 1.4;
+  }
+
+  .sketch {
+    position: relative;
+    background: var(--paper);
+    border: 1.4px solid var(--line);
+    border-radius: 22px;
+  }
+  .sketch::before {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border: 1px solid var(--line-soft);
+    border-radius: inherit;
+    transform: rotate(0.8deg);
+    pointer-events: none;
+  }
+  .sketch--strong { border-width: 2.1px; border-radius: 28px; }
+  .sketch--strong::before { border-radius: 26px; }
+  .sketch--rounded { border-radius: 16px; }
+  .sketch--rounded::before { border-radius: 14px; }
+  .sketch--field { border-radius: 12px; border-width: 1.4px; }
+  .sketch--field::before { border-radius: 10px; }
+  .sketch--card { border-radius: 14px; border-color: #2a2620; border-width: 1.3px; }
+  .sketch--card::before { border-radius: 12px; border-color: rgba(42, 38, 32, 0.34); }
+  .sketch--pill { border-radius: 999px; border-width: 1.4px; }
+  .sketch--pill::before { border-radius: 997px; }
+  .sketch--count { border-radius: 999px; border-width: 1.1px; }
+  .sketch--count::before { border-radius: 997px; }
+  .sketch--drawer { border-radius: 22px; border-width: 1.4px; }
+  .sketch--drawer::before { border-radius: 20px; }
+
+  .frame {
+    max-width: 1400px;
+    margin: 32px auto;
+    padding: 36px 36px 56px;
+  }
+
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin: 0 0 4px;
+  }
+  .frame-title {
+    font-size: 26px;
+    font-weight: 600;
+    margin: 0 0 6px;
+    color: var(--ink);
+    letter-spacing: -0.005em;
+  }
+  .frame-subtitle {
+    font-size: 14px;
+    color: var(--ink-faint);
+    margin: 0 0 24px;
+  }
+
+  /* ---------- Topbar ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--paper-soft-2);
+    padding: 22px 28px;
+    margin-bottom: 28px;
+  }
+  .topbar h1 {
+    font-size: 28px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--ink);
+    position: relative;
+    z-index: 1;
+  }
+  .topbar-pills {
+    display: flex;
+    gap: 12px;
+    position: relative;
+    z-index: 1;
+  }
+  .pill {
+    border: none;
+    background: var(--pill-cream);
+    color: var(--ink);
+    font: 600 13px "Inter", sans-serif;
+    height: 40px;
+    padding: 0 22px;
+    cursor: pointer;
+    transition: filter 120ms ease;
+  }
+  .pill[aria-pressed="true"] { background: var(--pill-mint); }
+  .pill:hover { filter: brightness(1.04); }
+
+  /* ---------- Workspace card ---------- */
+  .workspace {
+    background: var(--board-bg);
+    padding: 32px 28px 32px;
+    position: relative;
+    overflow: hidden; /* drawer slides in from the right */
+  }
+  .workspace h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 22px;
+    color: var(--ink);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Filter row */
+  .filters {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr 0.7fr 2fr;
+    gap: 14px;
+    margin-bottom: 22px;
+    position: relative;
+    z-index: 1;
+  }
+  .field-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin: 0 0 8px;
+  }
+  .field-input {
+    background: var(--board-bg);
+    padding: 14px 14px;
+    color: var(--placeholder);
+    font: 400 12px "Inter", sans-serif;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+  }
+  .field-input input,
+  .field-input select,
+  .field-input textarea {
+    background: transparent;
+    border: none;
+    outline: none;
+    font: inherit;
+    color: var(--ink);
+    width: 100%;
+    padding: 0;
+    appearance: none;
+    resize: none;
+  }
+  .field-input input::placeholder,
+  .field-input textarea::placeholder { color: var(--placeholder); }
+
+  /* Board */
+  .board {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .col {
+    background: var(--col);
+    padding: 14px 10px 14px;
+    min-height: 760px;
+  }
+  .col-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    position: relative;
+    z-index: 1;
+  }
+  .col-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-2);
+  }
+  .col-count {
+    background: var(--count-bg);
+    width: 28px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font: 600 11px "Inter", sans-serif;
+    color: var(--ink-2);
+  }
+  .col-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+    z-index: 1;
+  }
+  .card {
+    background: var(--card);
+    padding: 14px 12px 14px;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+    transition: transform 120ms ease, box-shadow 120ms ease;
+    position: relative;
+  }
+  .card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px -10px rgba(0, 0, 0, 0.18);
+  }
+  .card.is-selected {
+    box-shadow: 0 0 0 2px var(--button-mint), 0 6px 18px -10px rgba(0, 0, 0, 0.2);
+  }
+  .card-meta {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-meta);
+    margin: 0 0 4px;
+    position: relative;
+    z-index: 1;
+  }
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 6px;
+    line-height: 1.25;
+    position: relative;
+    z-index: 1;
+  }
+  .card-desc {
+    font-size: 11px;
+    color: var(--ink-desc);
+    margin: 0;
+    line-height: 1.45;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Drawer */
+  .drawer {
+    position: absolute;
+    top: 28px;
+    right: 28px;
+    bottom: 28px;
+    width: 340px;
+    background: var(--drawer);
+    padding: 26px 24px 26px;
+    z-index: 5;
+    overflow-y: auto;
+    transform: translateX(calc(100% + 60px));
+    transition: transform 240ms ease;
+  }
+  .drawer.is-open {
+    transform: translateX(0);
+  }
+  .drawer h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 22px;
+    color: var(--ink);
+    position: relative;
+    z-index: 1;
+  }
+  .drawer-section { margin-bottom: 22px; position: relative; z-index: 1; }
+  .drawer-section h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-list-strong);
+    margin: 0 0 12px;
+  }
+  .drawer-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .drawer-list li {
+    font-size: 12px;
+    color: var(--ink-list);
+    padding: 4px 0 4px 16px;
+    position: relative;
+  }
+  .drawer-list li::before {
+    content: "•";
+    position: absolute;
+    left: 4px;
+    color: var(--ink-list);
+  }
+
+  .drawer-summary {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    border: 1px dashed var(--line-soft);
+  }
+  .drawer-summary .meta {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-meta);
+    margin: 0 0 4px;
+  }
+  .drawer-summary .title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 4px;
+  }
+  .drawer-summary .desc {
+    font-size: 11px;
+    color: var(--ink-desc);
+    margin: 0;
+    line-height: 1.45;
+  }
+
+  .drawer .field-input { background: var(--board-bg); }
+  .drawer .field-input--tall {
+    min-height: 110px;
+    align-items: flex-start;
+    padding-top: 14px;
+  }
+  .drawer .field-input--med {
+    min-height: 76px;
+    align-items: flex-start;
+    padding-top: 14px;
+  }
+
+  .save-row {
+    display: flex;
+    justify-content: center;
+    margin-top: 14px;
+  }
+  .save-btn {
+    background: var(--button-mint);
+    border: none;
+    height: 46px;
+    padding: 0 36px;
+    font: 600 14px "Inter", sans-serif;
+    color: var(--ink);
+    cursor: pointer;
+    transition: filter 120ms ease;
+  }
+  .save-btn:hover { filter: brightness(1.04); }
+
+  .sticky {
+    background: var(--sticky);
+    border: 1.1px solid var(--sticky-line);
+    border-radius: 10px;
+    padding: 14px 18px;
+    color: var(--sticky-ink);
+    font: 600 13px/1.5 "Inter", sans-serif;
+    max-width: 230px;
+    transform: rotate(3deg);
+    box-shadow: 0 8px 18px -12px rgba(119, 106, 54, 0.5);
+    margin: 28px auto 0;
+    position: relative;
+  }
+  .sticky::before {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border: 1px solid rgba(119, 106, 54, 0.34);
+    border-radius: 8px;
+    transform: rotate(0.8deg);
+    pointer-events: none;
+  }
+
+  /* Intake mode within drawer */
+  .intake-form .field { margin-bottom: 14px; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: #fffdf7;
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 200ms ease, transform 200ms ease;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .toast.is-visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @media (max-width: 1180px) {
+    .filters { grid-template-columns: 1fr 1fr; }
+    .board { grid-template-columns: repeat(3, 1fr); }
+    .col { min-height: 320px; }
+    .drawer { width: 300px; }
+  }
+  @media (max-width: 760px) {
+    .topbar { flex-direction: column; gap: 14px; align-items: flex-start; }
+    .board { grid-template-columns: repeat(2, 1fr); }
+    .drawer { position: static; width: auto; transform: none; margin-top: 24px; }
+    .frame { padding: 24px 16px 40px; }
+  }
+</style>
+</head>
+<body>
+
+<main class="frame sketch sketch--strong">
+  <p class="eyebrow">Concept 2</p>
+  <h1 class="frame-title">Workspace with drawer</h1>
+  <p class="frame-subtitle">Feels like a working desk. Board stays central, detail and forms slide in.</p>
+
+  <header class="topbar sketch">
+    <h1>OpsFlow workspace</h1>
+    <div class="topbar-pills" role="tablist">
+      <button class="pill sketch sketch--pill" type="button" data-mode="board" aria-pressed="false">Board</button>
+      <button class="pill sketch sketch--pill" type="button" data-mode="details" aria-pressed="true">Details</button>
+      <button class="pill sketch sketch--pill" type="button" data-mode="intake" aria-pressed="false">Intake</button>
+    </div>
+  </header>
+
+  <section class="workspace sketch sketch--rounded" aria-labelledby="boardTitle">
+    <h2 id="boardTitle">Board-first layout</h2>
+
+    <div class="filters">
+      <div class="field">
+        <label class="field-label" for="f-search">Search</label>
+        <div class="field-input sketch sketch--field">
+          <input id="f-search" type="search" placeholder="Search title or division" />
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label" for="f-division">Division</label>
+        <div class="field-input sketch sketch--field">
+          <select id="f-division">
+            <option value="">All</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label" for="f-priority">Priority</label>
+        <div class="field-input sketch sketch--field">
+          <select id="f-priority">
+            <option value="">All</option>
+            <option>High</option>
+            <option>Medium</option>
+            <option>Low</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label" for="f-hint">Work hint</label>
+        <div class="field-input sketch sketch--field">
+          <input id="f-hint" type="text" placeholder="Open a card to inspect request detail and attachments" readonly />
+        </div>
+      </div>
+    </div>
+
+    <div class="board" id="board"></div>
+
+    <!-- Slide-out drawer -->
+    <aside class="drawer sketch sketch--drawer is-open" id="drawer" aria-label="Slide-out detail">
+      <h3 id="drawerTitle">Slide-out detail</h3>
+      <div id="drawerBody"></div>
+      <aside class="sticky">Use this if the team works cards all day and only opens intake when needed.</aside>
+    </aside>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  const STORAGE_KEY = "opsflow-workspace-v1";
+  const COLUMNS = ["Issue Request", "Review", "Revision", "Production", "Testing", "Deployment"];
+
+  function seed() {
+    return [
+      { id: crypto.randomUUID(), col: "Issue Request", division: "QA",     priority: "Medium", meta: "QA • Medium",    title: "QA evidence flow",   desc: "New request entered." },
+      { id: crypto.randomUUID(), col: "Review",        division: "BPO",    priority: "High",   meta: "BPO • High",     title: "Attendance queue",   desc: "Scope under review." },
+      { id: crypto.randomUUID(), col: "Revision",      division: "MPO",    priority: "High",   meta: "MPO • High",     title: "Invoice exceptions", desc: "Need more sample files." },
+      { id: crypto.randomUUID(), col: "Production",    division: "BPO",    priority: "High",   meta: "BPO • High",     title: "Payroll recon",      desc: "Implementation underway." },
+      { id: crypto.randomUUID(), col: "Testing",       division: "Shared", priority: "Low",    meta: "Shared • Low",   title: "Onboarding handoff", desc: "UAT on checklist flow." },
+      { id: crypto.randomUUID(), col: "Deployment",    division: "Ops",    priority: "Low",    meta: "Ops • Low",      title: "Vendor tracker",     desc: "Delivered." },
+    ];
+  }
+
+  function load() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return seed();
+  }
+  function persist() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tickets)); } catch (e) {}
+  }
+
+  const state = {
+    tickets: load(),
+    selectedId: null,
+    mode: "details",      // board | details | intake
+    search: "",
+    division: "",
+    priority: "",
+  };
+  state.selectedId = state.tickets[1]?.id ?? state.tickets[0]?.id ?? null;
+
+  function showToast(msg) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("is-visible");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => el.classList.remove("is-visible"), 2000);
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c]);
+  }
+
+  function ticketMatches(t) {
+    if (state.priority && t.priority !== state.priority) return false;
+    if (state.division && t.division !== state.division) return false;
+    if (state.search) {
+      const q = state.search.toLowerCase();
+      const hay = [t.title, t.desc, t.meta, t.division].join(" ").toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  }
+
+  function renderBoard() {
+    const board = document.getElementById("board");
+    board.innerHTML = "";
+    for (const colName of COLUMNS) {
+      const colTickets = state.tickets.filter(t => t.col === colName && ticketMatches(t));
+      const col = document.createElement("section");
+      col.className = "col sketch sketch--rounded";
+      col.setAttribute("aria-label", colName);
+      col.innerHTML = `
+        <header class="col-header">
+          <span class="col-name">${escapeHtml(colName)}</span>
+          <span class="col-count sketch sketch--count">${colTickets.length}</span>
+        </header>
+        <div class="col-cards"></div>
+      `;
+      const cards = col.querySelector(".col-cards");
+      for (const t of colTickets) {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "card sketch sketch--card" + (t.id === state.selectedId ? " is-selected" : "");
+        card.title = "Click to open in detail drawer";
+        card.innerHTML = `
+          <p class="card-meta">${escapeHtml(t.meta)}</p>
+          <p class="card-title">${escapeHtml(t.title)}</p>
+          <p class="card-desc">${escapeHtml(t.desc)}</p>
+        `;
+        card.addEventListener("click", () => {
+          state.selectedId = t.id;
+          state.mode = "details";
+          updateMode();
+          renderBoard();
+          renderDrawer();
+        });
+        cards.appendChild(card);
+      }
+      board.appendChild(col);
+    }
+  }
+
+  function renderDivisionFilter() {
+    const sel = document.getElementById("f-division");
+    const divisions = [...new Set(state.tickets.map(t => t.division))].sort();
+    const current = state.division;
+    sel.innerHTML = `<option value="">All</option>` +
+      divisions.map(d => `<option value="${escapeHtml(d)}"${d === current ? " selected" : ""}>${escapeHtml(d)}</option>`).join("");
+  }
+
+  function renderDrawer() {
+    const host = document.getElementById("drawerBody");
+    const title = document.getElementById("drawerTitle");
+
+    if (state.mode === "intake") {
+      title.textContent = "Quick intake";
+      host.innerHTML = `
+        <form class="intake-form" id="intakeForm" autocomplete="off">
+          <div class="drawer-section">
+            <div class="field">
+              <label class="field-label" for="i-title">Request title</label>
+              <div class="field-input sketch sketch--field"><input id="i-title" name="title" type="text" placeholder="Short label" required /></div>
+            </div>
+            <div class="field" style="margin-top:12px">
+              <label class="field-label" for="i-division">Division</label>
+              <div class="field-input sketch sketch--field"><input id="i-division" name="division" type="text" placeholder="BPO / MPO / QA" required /></div>
+            </div>
+            <div class="field" style="margin-top:12px">
+              <label class="field-label" for="i-priority">Priority</label>
+              <div class="field-input sketch sketch--field">
+                <select id="i-priority" name="priority"><option>High</option><option selected>Medium</option><option>Low</option></select>
+              </div>
+            </div>
+            <div class="field" style="margin-top:12px">
+              <label class="field-label" for="i-desc">Why it matters</label>
+              <div class="field-input field-input--med sketch sketch--field"><textarea id="i-desc" name="desc" rows="3" placeholder="Hours saved, SLA improvement"></textarea></div>
+            </div>
+          </div>
+          <div class="save-row">
+            <button class="save-btn sketch sketch--pill" type="submit">Create &amp; add to Issue Request</button>
+          </div>
+        </form>
+      `;
+      document.getElementById("intakeForm").addEventListener("submit", e => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const get = k => String(fd.get(k) ?? "").trim();
+        const title = get("title"), division = get("division"), priority = get("priority") || "Medium", desc = get("desc") || "New request entered.";
+        if (!title || !division) { showToast("Title and Division are required"); return; }
+        const t = {
+          id: crypto.randomUUID(),
+          col: "Issue Request",
+          division, priority,
+          meta: `${division.split("/")[0].trim()} • ${priority}`,
+          title,
+          desc,
+        };
+        state.tickets.unshift(t);
+        state.selectedId = t.id;
+        state.mode = "details";
+        persist();
+        updateMode();
+        renderDivisionFilter();
+        renderBoard();
+        renderDrawer();
+        showToast("Ticket created in Issue Request");
+      });
+      return;
+    }
+
+    if (state.mode === "board") {
+      // Drawer is hidden in board mode; render nothing.
+      host.innerHTML = "";
+      return;
+    }
+
+    // details mode
+    const t = state.tickets.find(x => x.id === state.selectedId);
+    title.textContent = "Slide-out detail";
+    host.innerHTML = `
+      ${t ? `
+        <div class="drawer-summary">
+          <p class="meta">${escapeHtml(t.meta)} · ${escapeHtml(t.col)}</p>
+          <p class="title">${escapeHtml(t.title)}</p>
+          <p class="desc">${escapeHtml(t.desc)}</p>
+        </div>
+      ` : ``}
+
+      <div class="drawer-section">
+        <h4>Selected ticket shows:</h4>
+        <ul class="drawer-list">
+          <li>Current manual process</li>
+          <li>Optimization request</li>
+          <li>Attachments and sample files</li>
+          <li>Activity log</li>
+          <li>Move to next stage</li>
+          <li>Send back for revision</li>
+        </ul>
+      </div>
+
+      <div class="drawer-section">
+        <h4>Add note</h4>
+        <div class="field-input field-input--tall sketch sketch--field">
+          <textarea id="d-note" rows="4" placeholder="Review findings, test results, revision notes."></textarea>
+        </div>
+      </div>
+
+      <div class="drawer-section">
+        <h4>Attachments</h4>
+        <div class="field-input field-input--med sketch sketch--field">
+          <textarea id="d-attach" rows="2" placeholder="Image / spreadsheet list"></textarea>
+        </div>
+      </div>
+
+      <div class="save-row">
+        <button class="save-btn sketch sketch--pill" type="button" id="saveUpdate">Save Update</button>
+      </div>
+    `;
+
+    const save = document.getElementById("saveUpdate");
+    if (save) {
+      save.addEventListener("click", () => {
+        if (!t) { showToast("Select a card first"); return; }
+        const note = (document.getElementById("d-note")?.value || "").trim();
+        const next = COLUMNS[Math.min(COLUMNS.indexOf(t.col) + 1, COLUMNS.length - 1)];
+        if (note) {
+          t.desc = note.length > 60 ? note.slice(0, 60) + "…" : note;
+        }
+        if (next !== t.col) {
+          showToast(`${t.title}: ${t.col} → ${next}`);
+          t.col = next;
+        } else {
+          showToast("Saved (already in last stage)");
+        }
+        persist();
+        renderBoard();
+        renderDrawer();
+      });
+    }
+  }
+
+  function updateMode() {
+    document.querySelectorAll(".pill[data-mode]").forEach(p => {
+      p.setAttribute("aria-pressed", p.dataset.mode === state.mode ? "true" : "false");
+    });
+    const drawer = document.getElementById("drawer");
+    drawer.classList.toggle("is-open", state.mode !== "board");
+  }
+
+  document.querySelectorAll(".pill[data-mode]").forEach(p => {
+    p.addEventListener("click", () => {
+      state.mode = p.dataset.mode;
+      updateMode();
+      renderDrawer();
+    });
+  });
+
+  document.getElementById("f-search").addEventListener("input", e => { state.search = e.target.value; renderBoard(); });
+  document.getElementById("f-division").addEventListener("change", e => { state.division = e.target.value; renderBoard(); });
+  document.getElementById("f-priority").addEventListener("change", e => { state.priority = e.target.value; renderBoard(); });
+
+  renderDivisionFilter();
+  renderBoard();
+  renderDrawer();
+  updateMode();
+</script>
+</body>
+</html>

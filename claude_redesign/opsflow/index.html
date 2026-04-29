@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpsFlow — UI Kit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+:root {
+  --bg: #f1ead9;
+  --bg-deep: #0f1b24;
+  --bg-sidebar: #0b252f;
+  --panel: rgba(250,246,238,0.78);
+  --panel-strong: rgba(255,252,247,0.96);
+  --ink: #14212c;
+  --muted: #5f6d79;
+  --line: rgba(20,33,44,0.12);
+  --accent: #0d8a7c;
+  --accent-strong: #0a5c55;
+  --accent-soft: rgba(13,138,124,0.12);
+  --signal: #df6f2d;
+  --high: #a61b1b;
+  --medium: #b56a0f;
+  --low: #1f63d8;
+  --shadow: 0 28px 70px rgba(20,33,44,0.13);
+  --shadow-soft: 0 16px 38px rgba(20,33,44,0.08);
+  --r-pill: 999px;
+  --r-lg: 30px;
+  --r-md: 22px;
+  --r-sm: 16px;
+  --serif: "Libre Baskerville","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  --sans: "DM Sans","Avenir Next","Segoe UI",sans-serif;
+}
+body {
+  margin: 0; min-height: 100vh;
+  font-family: var(--sans); color: var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(13,138,124,0.24), transparent 24%),
+    radial-gradient(circle at 85% 15%, rgba(223,111,45,0.18), transparent 18%),
+    radial-gradient(circle at bottom right, rgba(10,92,85,0.16), transparent 24%),
+    linear-gradient(135deg, #f7efdf 0%, #ece3d2 48%, #f6efe6 100%);
+}
+button, input, select, textarea { font: inherit; cursor: pointer; }
+h1,h2,h3,h4 { font-family: var(--serif); letter-spacing: -0.02em; margin: 0; }
+p { margin: 0; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="Tokens.jsx"></script>
+<script type="text/babel" src="Sidebar.jsx"></script>
+<script type="text/babel" src="IntakeView.jsx"></script>
+<script type="text/babel" src="BoardView.jsx"></script>
+<script type="text/babel" src="App.jsx"></script>
+</body>
+</html>

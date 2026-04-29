@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #f1ead9; font-family: "DM Sans", sans-serif; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .label { font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #5f6d79; }
+  .pill { display: inline-flex; align-items: center; padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.78rem; font-weight: 700; }
+</style>
+</head>
+<body>
+  <div class="label">Priority badges</div>
+  <div class="row">
+    <span class="pill" style="background:#a61b1b; color:#fff;">High</span>
+    <span class="pill" style="background:#b56a0f; color:#fff;">Medium</span>
+    <span class="pill" style="background:#1f63d8; color:#fff;">Low</span>
+  </div>
+  <div class="label">Activity / info chips</div>
+  <div class="row">
+    <span class="pill" style="background:rgba(13,138,124,0.12); color:#0a5c55;">OPS-0042</span>
+    <span class="pill" style="background:rgba(13,138,124,0.12); color:#0a5c55;">Current process</span>
+    <span class="pill" style="background:rgba(13,138,124,0.12); color:#0a5c55;">Attachments</span>
+    <span class="pill" style="background:rgba(13,138,124,0.12); color:#0a5c55;">Activity</span>
+  </div>
+  <div class="label">Hero chips (on dark)</div>
+  <div class="row" style="background:linear-gradient(135deg,rgba(12,60,56,0.98),rgba(14,110,97,0.88)); padding:12px 14px; border-radius:18px;">
+    <span class="pill" style="border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.08); color:#f7fffd;">Structured intake</span>
+    <span class="pill" style="border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.08); color:#f7fffd;">Better scoping</span>
+    <span class="pill" style="border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.08); color:#f7fffd;">Cleaner handoff</span>
+  </div>
+  <div class="label">Column count</div>
+  <div class="row">
+    <span class="pill" style="background:rgba(13,138,124,0.12); color:#0a5c55; min-width:2rem; justify-content:center;">3</span>
+    <span class="pill" style="background:rgba(13,138,124,0.12); color:#0a5c55; min-width:2rem; justify-content:center;">12</span>
+  </div>
+</body>
+</html>

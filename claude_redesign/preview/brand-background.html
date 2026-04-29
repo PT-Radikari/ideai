@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; font-family: "DM Sans", sans-serif; }
+  .bg-demo {
+    width: 700px; height: 150px; position: relative;
+    background:
+      radial-gradient(circle at top left, rgba(13,138,124,0.24), transparent 24%),
+      radial-gradient(circle at 85% 15%, rgba(223,111,45,0.18), transparent 18%),
+      radial-gradient(circle at bottom right, rgba(10,92,85,0.16), transparent 24%),
+      linear-gradient(135deg, #f7efdf 0%, #ece3d2 48%, #f6efe6 100%);
+  }
+  .noise {
+    position: absolute; inset: 0; pointer-events: none; opacity: 0.35;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 96px 96px;
+    mask-image: radial-gradient(circle at center, black, transparent 82%);
+  }
+  .labels { position: absolute; bottom: 12px; left: 16px; display: flex; gap: 8px; }
+  .tag { background: rgba(255,255,255,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(20,33,44,0.12); border-radius: 999px; padding: 3px 10px; font-size: 10px; font-weight: 700; color: #14212c; }
+</style>
+</head>
+<body>
+  <div class="bg-demo">
+    <div class="noise"></div>
+    <div class="labels">
+      <span class="tag">Warm parchment base</span>
+      <span class="tag">Radial teal + orange gradients</span>
+      <span class="tag">Grid noise overlay</span>
+    </div>
+  </div>
+</body>
+</html>

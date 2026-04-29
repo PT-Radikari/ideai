@@ -1,0 +1,1020 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpsFlow — Optimization Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Caveat:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #efe7d4;
+    --paper-soft: #f5f0e2;
+    --card: #fbf8ef;
+    --card-shadow: 0 1px 0 rgba(95, 80, 50, 0.06), 0 8px 24px -16px rgba(95, 80, 50, 0.18);
+    --ink: #2a241b;
+    --ink-soft: #5b5340;
+    --ink-faint: #8a8067;
+    --line: #d6cab0;
+    --line-strong: #b6a685;
+    --accent: #5a6b3a;
+    --accent-soft: #c8d3a6;
+    --sticky: #fbe88a;
+    --sticky-shadow: 0 6px 14px -10px rgba(140, 100, 30, 0.55);
+    --cluster-request: #f7d8c8;
+    --cluster-request-soft: #fdeee5;
+    --cluster-build: #d4e4c4;
+    --cluster-build-soft: #ecf3df;
+    --cluster-release: #d8d2eb;
+    --cluster-release-soft: #ece9f5;
+    --priority-high: #b14f3b;
+    --priority-medium: #b78b3a;
+    --priority-low: #5e7c43;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 20% 0%, rgba(180, 160, 110, 0.08), transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(120, 140, 90, 0.06), transparent 50%),
+      var(--paper);
+    min-height: 100vh;
+    line-height: 1.45;
+  }
+
+  .page-noise {
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    opacity: 0.4;
+    background-image: radial-gradient(rgba(150, 130, 90, 0.08) 1px, transparent 1px);
+    background-size: 4px 4px;
+    z-index: 0;
+  }
+
+  .workspace {
+    position: relative;
+    z-index: 1;
+    max-width: 1700px;
+    margin: 0 auto;
+    padding: 32px 40px 80px;
+  }
+
+  .workspace-tag {
+    font-family: "Caveat", cursive;
+    font-size: 18px;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+  }
+
+  .workspace-tag-sub {
+    font-size: 13px;
+    color: var(--ink-faint);
+    margin-bottom: 24px;
+  }
+
+  .workspace-header {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 24px;
+    align-items: center;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 22px 28px;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 28px;
+  }
+
+  .workspace-header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .stage-nav {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .stage-chip {
+    border: 1px solid var(--line);
+    background: var(--paper-soft);
+    color: var(--ink-soft);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 120ms ease;
+    font-family: inherit;
+  }
+  .stage-chip:hover { border-color: var(--line-strong); }
+  .stage-chip.is-active {
+    background: var(--ink);
+    color: var(--paper-soft);
+    border-color: var(--ink);
+  }
+
+  .sticky-note {
+    background: var(--sticky);
+    color: #6b4f1a;
+    font-family: "Caveat", cursive;
+    font-size: 14px;
+    line-height: 1.3;
+    padding: 10px 14px;
+    border-radius: 4px;
+    box-shadow: var(--sticky-shadow);
+    transform: rotate(-1.5deg);
+    max-width: 200px;
+    border: 1px solid rgba(150, 110, 30, 0.2);
+  }
+
+  .modules-grid {
+    display: grid;
+    grid-template-columns: minmax(320px, 360px) minmax(540px, 1fr) minmax(340px, 380px);
+    gap: 24px;
+    align-items: start;
+  }
+
+  @media (max-width: 1280px) {
+    .modules-grid { grid-template-columns: 1fr; }
+  }
+
+  .module {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: var(--card-shadow);
+    position: relative;
+  }
+
+  .module-header { margin-bottom: 18px; }
+  .module-number {
+    font-family: "Caveat", cursive;
+    font-size: 18px;
+    color: var(--ink-faint);
+  }
+  .module-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 2px 0 6px;
+    letter-spacing: -0.005em;
+  }
+  .module-header p {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 13px;
+  }
+
+  /* ---------- Intake Storyboard ---------- */
+  .block {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 0 0 14px;
+    background: var(--paper-soft);
+  }
+  .block legend {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 0 6px;
+    margin-left: -6px;
+    color: var(--ink);
+  }
+  .block-hint {
+    font-size: 12px;
+    color: var(--ink-faint);
+    margin: 4px 0 12px;
+  }
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .field-row--single { grid-template-columns: 1fr; }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    gap: 6px;
+  }
+  input[type="text"],
+  input[type="search"],
+  select,
+  textarea {
+    font: inherit;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    padding: 8px 10px;
+    color: var(--ink);
+    width: 100%;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+  }
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(90, 107, 58, 0.15);
+  }
+  textarea { resize: vertical; min-height: 60px; }
+
+  .submit-row { display: flex; justify-content: flex-end; margin-top: 14px; }
+  .pill-button {
+    background: var(--accent);
+    color: #fdf9eb;
+    border: none;
+    border-radius: 999px;
+    padding: 9px 22px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: filter 120ms ease;
+  }
+  .pill-button:hover { filter: brightness(1.05); }
+  .pill-button--ghost {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--line-strong);
+  }
+
+  /* ---------- Operations Desk ---------- */
+  .desk-toolbar {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1.4fr;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 14px;
+    background: var(--paper-soft);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+
+  .cluster-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+  @media (max-width: 1100px) {
+    .cluster-grid { grid-template-columns: 1fr; }
+  }
+
+  .cluster {
+    border-radius: 14px;
+    padding: 14px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    min-height: 220px;
+  }
+  .cluster--request { background: var(--cluster-request-soft); border-color: rgba(180, 110, 80, 0.25); }
+  .cluster--build { background: var(--cluster-build-soft); border-color: rgba(110, 140, 80, 0.25); }
+  .cluster--release { background: var(--cluster-release-soft); border-color: rgba(130, 110, 170, 0.25); }
+
+  .cluster-header { margin-bottom: 10px; }
+  .cluster-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 6px;
+  }
+  .cluster-stages { display: flex; gap: 6px; flex-wrap: wrap; }
+  .stage-pill {
+    font-size: 11px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.6);
+    color: var(--ink-soft);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    font-weight: 500;
+  }
+
+  .cluster-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .ticket-card {
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    font-family: inherit;
+    transition: transform 120ms ease, box-shadow 120ms ease;
+  }
+  .ticket-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px -8px rgba(0, 0, 0, 0.2);
+  }
+  .ticket-card.is-selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(90, 107, 58, 0.2);
+  }
+  .ticket-card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin-bottom: 4px;
+  }
+  .ticket-priority {
+    font-weight: 600;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .ticket-priority[data-priority="High"] { color: var(--priority-high); }
+  .ticket-priority[data-priority="Medium"] { color: var(--priority-medium); }
+  .ticket-priority[data-priority="Low"] { color: var(--priority-low); }
+  .ticket-title {
+    font-size: 13px;
+    font-weight: 500;
+    margin: 0 0 4px;
+    line-height: 1.3;
+    color: var(--ink);
+  }
+  .ticket-sub {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  .desk-callout {
+    margin-top: 18px;
+    margin-left: auto;
+    transform: rotate(1.5deg);
+    max-width: 240px;
+  }
+
+  /* ---------- Working Drawer ---------- */
+  .drawer-section {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    background: var(--paper-soft);
+  }
+  .drawer-section h4 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+    margin: 0 0 8px;
+    font-weight: 600;
+  }
+  .drawer-section h5 {
+    font-size: 12px;
+    font-weight: 600;
+    margin: 12px 0 4px;
+    color: var(--ink-soft);
+  }
+  .drawer-section p { margin: 0; font-size: 13px; color: var(--ink); }
+  .drawer-section .strong-line {
+    font-weight: 600;
+    font-size: 14px;
+    margin: 0 0 4px;
+  }
+  .drawer-section .muted-line {
+    font-size: 12px;
+    color: var(--ink-faint);
+    margin: 0 0 8px;
+  }
+
+  .snapshot-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin: 8px 0 10px;
+  }
+  .snapshot-tile {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 6px;
+    text-align: center;
+  }
+  .snapshot-tile span {
+    display: block;
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .snapshot-tile strong {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .drawer-empty {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--ink-faint);
+    font-size: 13px;
+  }
+  .drawer-empty strong {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+
+  .drawer-callout {
+    transform: rotate(-1deg);
+    margin: 16px auto 0;
+    max-width: 220px;
+  }
+
+  .activity-line {
+    font-size: 12px;
+    color: var(--ink-soft);
+    border-left: 2px solid var(--line);
+    padding: 4px 0 4px 10px;
+    margin-bottom: 6px;
+  }
+  .activity-line strong { color: var(--ink); display: block; font-weight: 600; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: var(--paper);
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 200ms ease, transform 200ms ease;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .toast.is-visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+</style>
+</head>
+<body>
+<div class="page-noise" aria-hidden="true"></div>
+
+<main class="workspace">
+  <p class="workspace-tag">OpsFlow alternative sketch: storyboard workspace</p>
+  <p class="workspace-tag-sub">This direction feels more like a working table with modules, rather than two classic app screens.</p>
+
+  <header class="workspace-header">
+    <div>
+      <h1>Optimization Pipeline</h1>
+    </div>
+    <nav class="stage-nav" aria-label="Stage navigation">
+      <button class="stage-chip is-active" type="button" data-stage="Issue Channel">Issue Channel</button>
+      <button class="stage-chip" type="button" data-stage="Review Hub">Review Hub</button>
+      <button class="stage-chip" type="button" data-stage="Build Desk">Build Desk</button>
+      <button class="stage-chip" type="button" data-stage="Testing">Testing</button>
+      <button class="stage-chip" type="button" data-stage="Deployment">Deployment</button>
+    </nav>
+    <aside class="sticky-note">Wholly different idea: more like a modular desk than a normal dashboard.</aside>
+  </header>
+
+  <div class="modules-grid">
+    <!-- 1. Intake Storyboard -->
+    <section class="module module--intake" aria-labelledby="intake-title">
+      <header class="module-header">
+        <span class="module-number">1. Intake Storyboard</span>
+        <h2 id="intake-title">Walk requesters through guided blocks</h2>
+        <p>Requesters move through guided blocks instead of one long form.</p>
+      </header>
+
+      <form id="intakeForm" autocomplete="off">
+        <fieldset class="block">
+          <legend>Choose division and service line first</legend>
+          <p class="block-hint">Set the boundaries of the request before describing it.</p>
+          <div class="field-row">
+            <label>Division
+              <input name="division" type="text" placeholder="BPO / MPO / QA / Shared Services" required />
+            </label>
+            <label>Service
+              <input name="service" type="text" placeholder="Payroll / Finance / Audit / Operations" required />
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="block">
+          <legend>Describe today's manual process</legend>
+          <p class="block-hint">Current process — handoffs, spreadsheets, approvals, pain points.</p>
+          <div class="field-row field-row--single">
+            <label>
+              <textarea name="currentProcess" rows="3" placeholder="Explain handoffs, manual approvals, and pain points." required></textarea>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="block">
+          <legend>Describe the requested optimization</legend>
+          <p class="block-hint">What should be improved, automated, or simplified?</p>
+          <div class="field-row field-row--single">
+            <label>Optimization request
+              <textarea name="requestDetail" rows="3" placeholder="Explain what should be simplified, automated, or clarified." required></textarea>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="block">
+          <legend>Support material</legend>
+          <p class="block-hint">Optional — anything that helps reviewers understand scope.</p>
+          <div class="field-row">
+            <label>Spreadsheet attachment
+              <input name="spreadsheet" type="text" placeholder=".xlsx / .csv sample files" />
+            </label>
+            <label>Image attachment
+              <input name="image" type="text" placeholder="Screenshots / visual evidence" />
+            </label>
+          </div>
+          <label style="margin-top:10px">Business impact
+            <input name="businessImpact" type="text" placeholder="Hours saved, SLA improvement, error reduction" />
+          </label>
+        </fieldset>
+
+        <input type="hidden" name="title" id="autoTitle" />
+        <div class="submit-row">
+          <button class="pill-button" type="submit">Submit To Review</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 2. Operations Desk -->
+    <section class="module module--desk" aria-labelledby="desk-title">
+      <header class="module-header">
+        <span class="module-number">2. Operations Desk</span>
+        <h2 id="desk-title">Cluster work, don't strip it across columns</h2>
+        <p>The board is broken into working clusters instead of a single straight strip.</p>
+      </header>
+
+      <div class="desk-toolbar">
+        <input type="search" id="searchInput" placeholder="Find request or division" />
+        <select id="priorityFilter">
+          <option value="">Priority — all</option>
+          <option value="High">High</option>
+          <option value="Medium">Medium</option>
+          <option value="Low">Low</option>
+        </select>
+        <select id="divisionFilter">
+          <option value="">Division — all</option>
+        </select>
+        <input type="text" id="workingNote" placeholder="Working note — request branch in work drawer" />
+      </div>
+
+      <div class="cluster-grid">
+        <article class="cluster cluster--request" data-cluster="request">
+          <div class="cluster-header">
+            <h3>Request Cluster</h3>
+            <div class="cluster-stages">
+              <span class="stage-pill">Issue Request</span>
+              <span class="stage-pill">Review</span>
+            </div>
+          </div>
+          <div class="cluster-cards" data-cards="request"></div>
+        </article>
+
+        <article class="cluster cluster--build" data-cluster="build">
+          <div class="cluster-header">
+            <h3>Build Cluster</h3>
+            <div class="cluster-stages">
+              <span class="stage-pill">Revision</span>
+              <span class="stage-pill">Production</span>
+            </div>
+          </div>
+          <div class="cluster-cards" data-cards="build"></div>
+        </article>
+
+        <article class="cluster cluster--release" data-cluster="release">
+          <div class="cluster-header">
+            <h3>Release Cluster</h3>
+            <div class="cluster-stages">
+              <span class="stage-pill">Testing</span>
+              <span class="stage-pill">Deployment</span>
+            </div>
+          </div>
+          <div class="cluster-cards" data-cards="release"></div>
+        </article>
+      </div>
+
+      <aside class="sticky-note desk-callout">
+        This board is not a pure kanban row. It groups work by team mindset: triage, build, release.
+      </aside>
+    </section>
+
+    <!-- 3. Working Drawer -->
+    <section class="module module--drawer" aria-labelledby="drawer-title">
+      <header class="module-header">
+        <span class="module-number">3. Working Drawer</span>
+        <h2 id="drawer-title">Selected ticket opens beside the clusters</h2>
+        <p>Selected ticket opens beside the clusters for action and context.</p>
+      </header>
+
+      <div id="drawerBody"></div>
+
+      <aside class="sticky-note drawer-callout">
+        Use this if you want the tool to feel more creative and team-based, not like a standard corporate board.
+      </aside>
+    </section>
+  </div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  const STORAGE_KEY = "opsflow-storyboard-v1";
+  const STAGE_TO_CLUSTER = {
+    "Issue Request": "request",
+    "Review": "request",
+    "Revision": "build",
+    "Production": "build",
+    "Testing": "release",
+    "Deployment": "release",
+  };
+  const STAGES = Object.keys(STAGE_TO_CLUSTER);
+
+  const seed = () => ([
+    {
+      id: crypto.randomUUID(),
+      code: "OPT-420381",
+      title: "Automate QA evidence collection",
+      division: "QA",
+      service: "Audit and Compliance",
+      priority: "Medium",
+      stage: "Issue Request",
+      currentProcess: "Analysts compare spreadsheets against ERP exports by hand and flag mismatches over email.",
+      requestDetail: "Introduce a validation workflow before month-end review.",
+      businessImpact: "Cut validation time from 5h to 1h, fewer mismatch escapes.",
+      assignee: "Nadia Putri",
+      activity: [{ title: "Ticket created", detail: "Entered through guided intake.", at: new Date(Date.now() - 1000*60*60*8).toISOString() }],
+      createdAt: new Date(Date.now() - 1000*60*60*8).toISOString(),
+    },
+    {
+      id: crypto.randomUUID(),
+      code: "OPT-420117",
+      title: "Attendance cleanup standardization",
+      division: "BPO Operations",
+      service: "Attendance Management",
+      priority: "High",
+      stage: "Review",
+      currentProcess: "Supervisors update three different attendance sheets and a final summary file before payroll cutoff.",
+      requestDetail: "Group missing logs, suspicious overtime, and unresolved leave entries into one queue.",
+      businessImpact: "Cut pre-payroll cleanup from 7 touchpoints to 2.",
+      assignee: "Rizal Hidayat",
+      activity: [
+        { title: "Review started", detail: "Business analyst is validating scope and source files.", at: new Date(Date.now() - 1000*60*40).toISOString() },
+        { title: "Ticket created", detail: "Entered through guided intake.", at: new Date(Date.now() - 1000*60*60*18).toISOString() },
+      ],
+      createdAt: new Date(Date.now() - 1000*60*60*18).toISOString(),
+    },
+    {
+      id: crypto.randomUUID(),
+      code: "OPT-419998",
+      title: "Payroll reconciliation tool",
+      division: "MPO Finance",
+      service: "Payroll",
+      priority: "High",
+      stage: "Production",
+      currentProcess: "Manual export and matching across 4 systems.",
+      requestDetail: "Auto-match line items and surface only mismatches.",
+      businessImpact: "Reduce close cycle by 1.5 days.",
+      assignee: "Melissa Tan",
+      activity: [{ title: "Build started", detail: "Workflow accepted after revision.", at: new Date(Date.now() - 1000*60*120).toISOString() }],
+      createdAt: new Date(Date.now() - 1000*60*60*36).toISOString(),
+    },
+    {
+      id: crypto.randomUUID(),
+      code: "OPT-419800",
+      title: "Invoice validation logic",
+      division: "MPO Finance",
+      service: "Invoice Reconciliation",
+      priority: "Medium",
+      stage: "Revision",
+      currentProcess: "Email-based mismatch flagging.",
+      requestDetail: "Refactor flagging into a shared queue.",
+      businessImpact: "Fewer mid-month escalations.",
+      assignee: "Nadia Putri",
+      activity: [{ title: "Sent for revision", detail: "Reviewer requested narrower scope.", at: new Date(Date.now() - 1000*60*200).toISOString() }],
+      createdAt: new Date(Date.now() - 1000*60*60*60).toISOString(),
+    },
+    {
+      id: crypto.randomUUID(),
+      code: "OPT-419552",
+      title: "Client onboarding checklist",
+      division: "Shared Services",
+      service: "Client Onboarding",
+      priority: "Low",
+      stage: "Testing",
+      currentProcess: "Each team uses its own checklist and sends screenshots through chat.",
+      requestDetail: "Standardize the checklist and approvals.",
+      businessImpact: "Cut onboarding coordination from 2 days to same-day.",
+      assignee: "Melissa Tan",
+      activity: [{ title: "Testing started", detail: "UAT team validating the flow.", at: new Date(Date.now() - 1000*60*25).toISOString() }],
+      createdAt: new Date(Date.now() - 1000*60*60*72).toISOString(),
+    },
+    {
+      id: crypto.randomUUID(),
+      code: "OPT-419310",
+      title: "Vendor handoff tracker",
+      division: "Procurement",
+      service: "Vendor Management",
+      priority: "Low",
+      stage: "Deployment",
+      currentProcess: "Spreadsheet shared by email, owners unclear.",
+      requestDetail: "Live tracker with explicit owner per handoff.",
+      businessImpact: "Faster vendor escalation cycles.",
+      assignee: "Rizal Hidayat",
+      activity: [{ title: "Deployed", detail: "Tracker rolled out to procurement leads.", at: new Date(Date.now() - 1000*60*60*5).toISOString() }],
+      createdAt: new Date(Date.now() - 1000*60*60*120).toISOString(),
+    },
+  ]);
+
+  const state = {
+    tickets: load(),
+    selectedId: null,
+    search: "",
+    priority: "",
+    division: "",
+  };
+  if (state.tickets.length > 0) state.selectedId = state.tickets.find(t => t.stage === "Review")?.id ?? state.tickets[0].id;
+
+  function load() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return seed();
+  }
+
+  function persist() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tickets)); } catch (e) {}
+  }
+
+  function showToast(msg) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("is-visible");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => el.classList.remove("is-visible"), 2200);
+  }
+
+  function fmtRel(iso) {
+    const diff = Date.now() - new Date(iso).getTime();
+    const min = Math.round(diff / 60000);
+    if (min < 1) return "just now";
+    if (min < 60) return `${min}m ago`;
+    const hr = Math.round(min / 60);
+    if (hr < 24) return `${hr}h ago`;
+    const d = Math.round(hr / 24);
+    return `${d}d ago`;
+  }
+
+  function ticketMatchesFilter(t) {
+    if (state.priority && t.priority !== state.priority) return false;
+    if (state.division && t.division !== state.division) return false;
+    if (state.search) {
+      const q = state.search.toLowerCase();
+      const hay = [t.title, t.division, t.service, t.requestDetail, t.assignee, t.code].join(" ").toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  }
+
+  function renderClusters() {
+    const groups = { request: [], build: [], release: [] };
+    for (const t of state.tickets) {
+      if (!ticketMatchesFilter(t)) continue;
+      groups[STAGE_TO_CLUSTER[t.stage] || "request"].push(t);
+    }
+    for (const [name, items] of Object.entries(groups)) {
+      const host = document.querySelector(`[data-cards="${name}"]`);
+      if (!host) continue;
+      host.innerHTML = "";
+      if (items.length === 0) {
+        host.innerHTML = `<div style="font-size:12px;color:var(--ink-faint);padding:6px 4px;">No tickets here yet.</div>`;
+        continue;
+      }
+      for (const t of items) {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "ticket-card" + (t.id === state.selectedId ? " is-selected" : "");
+        card.innerHTML = `
+          <div class="ticket-card-meta">
+            <span>${t.code} · ${t.stage}</span>
+            <span class="ticket-priority" data-priority="${t.priority}">${t.priority}</span>
+          </div>
+          <p class="ticket-title">${t.title}</p>
+          <p class="ticket-sub">${t.division} · ${t.service}</p>
+        `;
+        card.addEventListener("click", () => selectTicket(t.id));
+        host.appendChild(card);
+      }
+    }
+  }
+
+  function renderDivisionFilter() {
+    const sel = document.getElementById("divisionFilter");
+    const current = state.division;
+    const divisions = [...new Set(state.tickets.map(t => t.division))].sort();
+    sel.innerHTML = `<option value="">Division — all</option>` +
+      divisions.map(d => `<option value="${d}"${d === current ? " selected" : ""}>${d}</option>`).join("");
+  }
+
+  function renderDrawer() {
+    const host = document.getElementById("drawerBody");
+    const t = state.tickets.find(x => x.id === state.selectedId);
+    const counts = countByCluster();
+
+    if (!t) {
+      host.innerHTML = `
+        <div class="drawer-section">
+          <div class="drawer-empty">
+            <strong>No ticket selected</strong>
+            Click a card on the operations desk to load it here.
+          </div>
+        </div>
+        ${renderSnapshot(counts)}
+      `;
+      return;
+    }
+
+    const stageOptions = STAGES.map(s => `<option${s === t.stage ? " selected" : ""}>${s}</option>`).join("");
+    const assigneeOptions = ["Nadia Putri","Rizal Hidayat","Melissa Tan","Analyst / builder / tester"].map(
+      a => `<option${a === t.assignee ? " selected" : ""}>${a}</option>`
+    ).join("");
+
+    host.innerHTML = `
+      <div class="drawer-section">
+        <h4>Selected Request</h4>
+        <p class="strong-line">${t.title}</p>
+        <p class="muted-line">${t.division} · ${t.priority} priority · ${t.stage.toLowerCase()}</p>
+        <h5>Current process</h5>
+        <p>${t.currentProcess || "—"}</p>
+        <h5>Optimization request</h5>
+        <p>${t.requestDetail || "—"}</p>
+      </div>
+
+      <div class="drawer-section">
+        <h4>Request Action</h4>
+        <div class="field-row">
+          <label>Move stage
+            <select id="stageSelect">${stageOptions}</select>
+          </label>
+          <label>Assign to
+            <select id="assigneeSelect">${assigneeOptions}</select>
+          </label>
+        </div>
+        <label style="margin-top:10px">Add note
+          <textarea id="noteInput" rows="2" placeholder="Review findings, blockers, revision request, or deployment note."></textarea>
+        </label>
+        <div class="submit-row">
+          <button class="pill-button" type="button" id="saveUpdate">Save Update</button>
+        </div>
+      </div>
+
+      ${renderSnapshot(counts)}
+
+      <div class="drawer-section">
+        <h4>Activity</h4>
+        ${t.activity.map(a => `
+          <div class="activity-line">
+            <strong>${a.title} · ${fmtRel(a.at)}</strong>
+            ${a.detail}
+          </div>
+        `).join("")}
+      </div>
+    `;
+
+    document.getElementById("saveUpdate").addEventListener("click", () => {
+      const newStage = document.getElementById("stageSelect").value;
+      const newAssignee = document.getElementById("assigneeSelect").value;
+      const note = document.getElementById("noteInput").value.trim();
+      const tk = state.tickets.find(x => x.id === t.id);
+      if (!tk) return;
+      const changes = [];
+      if (newStage !== tk.stage) {
+        changes.push(`Stage: ${tk.stage} → ${newStage}`);
+        tk.stage = newStage;
+      }
+      if (newAssignee !== tk.assignee) {
+        changes.push(`Assigned to ${newAssignee}`);
+        tk.assignee = newAssignee;
+      }
+      if (note) changes.push(`Note: ${note}`);
+      if (changes.length === 0) {
+        showToast("Nothing to save");
+        return;
+      }
+      tk.activity.unshift({ title: "Manual update", detail: changes.join(" · "), at: new Date().toISOString() });
+      persist();
+      renderAll();
+      showToast("Update saved");
+    });
+  }
+
+  function countByCluster() {
+    const out = { request: 0, build: 0, release: 0, total: state.tickets.length };
+    for (const t of state.tickets) out[STAGE_TO_CLUSTER[t.stage] || "request"]++;
+    return out;
+  }
+
+  function renderSnapshot(c) {
+    return `
+      <div class="drawer-section">
+        <h4>Quick Status Snapshot</h4>
+        <div class="snapshot-grid">
+          <div class="snapshot-tile"><strong>${c.total}</strong><span>Total</span></div>
+          <div class="snapshot-tile"><strong>${c.request}</strong><span>Intake</span></div>
+          <div class="snapshot-tile"><strong>${c.build}</strong><span>Build</span></div>
+          <div class="snapshot-tile"><strong>${c.release}</strong><span>Release</span></div>
+        </div>
+        <p style="font-size:11.5px;color:var(--ink-faint);margin-top:6px">Attachments visible here. Image previews and spreadsheet names appear in the drawer.</p>
+      </div>
+    `;
+  }
+
+  function selectTicket(id) {
+    state.selectedId = id;
+    renderClusters();
+    renderDrawer();
+  }
+
+  function renderAll() {
+    renderDivisionFilter();
+    renderClusters();
+    renderDrawer();
+  }
+
+  // Wire toolbar
+  document.getElementById("searchInput").addEventListener("input", e => { state.search = e.target.value; renderClusters(); });
+  document.getElementById("priorityFilter").addEventListener("change", e => { state.priority = e.target.value; renderClusters(); });
+  document.getElementById("divisionFilter").addEventListener("change", e => { state.division = e.target.value; renderClusters(); });
+
+  // Stage chips: just visual switch + filter the priority via selection (illustrative)
+  document.querySelectorAll(".stage-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      document.querySelectorAll(".stage-chip").forEach(c => c.classList.remove("is-active"));
+      chip.classList.add("is-active");
+    });
+  });
+
+  // Intake form
+  document.getElementById("intakeForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const get = k => String(fd.get(k) ?? "").trim();
+    const division = get("division");
+    const service = get("service");
+    const currentProcess = get("currentProcess");
+    const requestDetail = get("requestDetail");
+    if (!division || !service || !currentProcess || !requestDetail) return;
+    const title = requestDetail.length > 64 ? requestDetail.slice(0, 64) + "…" : requestDetail;
+    const ticket = {
+      id: crypto.randomUUID(),
+      code: "OPT-" + String(Date.now()).slice(-6),
+      title,
+      division,
+      service,
+      priority: "Medium",
+      stage: "Issue Request",
+      currentProcess,
+      requestDetail,
+      businessImpact: get("businessImpact") || "—",
+      assignee: "Analyst / builder / tester",
+      activity: [{ title: "Ticket created", detail: "Submitted through guided intake.", at: new Date().toISOString() }],
+      createdAt: new Date().toISOString(),
+    };
+    state.tickets.unshift(ticket);
+    state.selectedId = ticket.id;
+    persist();
+    renderAll();
+    e.target.reset();
+    showToast("Submitted to review");
+  });
+
+  renderAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Libre+Baskerville:wght@700&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; font-family: "DM Sans", sans-serif; background: #0b252f; padding: 20px; max-width: 280px; min-height: 360px; }
+  .brand-block {
+    padding: 1.45rem; border: 1px solid rgba(255,255,255,0.08); border-radius: 30px;
+    background: linear-gradient(155deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+    margin-bottom: 16px;
+  }
+  .sigil { display: inline-grid; grid-template-columns: repeat(3,10px); gap: 5px; margin-bottom: 14px; }
+  .sigil span { aspect-ratio:1; border-radius:999px; background:linear-gradient(135deg,#f4bf66,#6fe5cb); box-shadow: 0 0 18px rgba(111,229,203,0.38); }
+  h1 { font-family: "Libre Baskerville", serif; font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; color: #f8fcfb; margin: 0 0 8px; }
+  .eyebrow { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #f8fcfb; opacity: 0.72; margin: 0 0 6px; }
+  .copy { font-size: 0.9rem; line-height: 1.55; color: rgba(248,252,251,0.78); margin: 0; }
+  .nav { display: grid; gap: 8px; }
+  .nav-btn { padding: 0.9rem 1rem; text-align: left; color: #d9f0ee; border: none; border-radius: 999px; cursor: pointer; font: inherit; font-size: 0.9rem; }
+  .active { background: rgba(255,255,255,0.14); }
+  .inactive { background: rgba(255,255,255,0.06); }
+</style>
+</head>
+<body>
+  <div class="brand-block">
+    <p class="eyebrow">Internal Workflow Hub</p>
+    <div class="sigil" aria-hidden="true"><span></span><span></span><span></span></div>
+    <h1>OpsFlow</h1>
+    <p class="copy">Intake and delivery tracking for optimization requests across BPO, MPO, and supporting divisions.</p>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn active">Issue Channel</button>
+    <button class="nav-btn inactive">Kanban Board</button>
+  </nav>
+</body>
+</html>

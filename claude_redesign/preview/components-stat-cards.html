@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Libre+Baskerville:wght@700&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; font-family: "DM Sans", sans-serif; background: #f1ead9; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .label { font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #5f6d79; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .stat {
+    padding: 1rem 1.1rem; border: 1px solid rgba(20,33,44,0.08); border-radius: 18px;
+    background: linear-gradient(180deg, rgba(255,252,247,0.88), rgba(249,243,233,0.78));
+    backdrop-filter: blur(10px); box-shadow: 0 16px 38px rgba(20,33,44,0.08);
+    min-width: 130px;
+  }
+  .stat .meta { color: #5f6d79; font-size: 0.82rem; }
+  .stat strong { display: block; font-size: 1.8rem; font-family: "Libre Baskerville", serif; margin: 4px 0 4px; color: #14212c; }
+  .stat .sub { color: #5f6d79; font-size: 0.8rem; line-height: 1.45; }
+</style>
+</head>
+<body>
+  <div class="label">Stat cards</div>
+  <div class="row">
+    <div class="stat">
+      <span class="meta">Tickets</span>
+      <strong>24</strong>
+      <span class="sub">Total requests logged</span>
+    </div>
+    <div class="stat">
+      <span class="meta">Active</span>
+      <strong>17</strong>
+      <span class="sub">Across live delivery lanes</span>
+    </div>
+    <div class="stat">
+      <span class="meta">Critical</span>
+      <strong>5</strong>
+      <span class="sub">High-priority requests</span>
+    </div>
+    <div class="stat">
+      <span class="meta">Deployed</span>
+      <strong>7</strong>
+      <span class="sub">Completed releases</span>
+    </div>
+  </div>
+</body>
+</html>
