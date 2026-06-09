@@ -1,5 +1,5 @@
 export const STAGES = [
-  "Issue Optimization Request",
+  "Issue Request",
   "Review",
   "Revision",
   "Production",
@@ -9,19 +9,20 @@ export const STAGES = [
 
 export const PRIORITIES = ["High", "Medium", "Low"] as const;
 
+export const ASSIGNEES = [
+  "Nadia Putri",
+  "Rizal Hidayat",
+  "Melissa Tan",
+  "Unassigned",
+] as const;
+
+export const CLUSTERS = ["all", "request", "build", "release"] as const;
+
 export type Stage = (typeof STAGES)[number];
 export type Priority = (typeof PRIORITIES)[number];
-export type View = "intake" | "board";
-export type AttachmentKind = "image" | "spreadsheet" | "file";
-
-export type AttachmentRecord = {
-  id: string;
-  name: string;
-  size: number;
-  type: string;
-  kind: AttachmentKind;
-  previewDataUrl: string;
-};
+export type Assignee = (typeof ASSIGNEES)[number];
+export type Cluster = (typeof CLUSTERS)[number];
+export type View = "board" | "intake";
 
 export type ActivityItem = {
   title: string;
@@ -36,14 +37,17 @@ export type Ticket = {
   title: string;
   division: string;
   service: string;
-  requester: string;
   priority: Priority;
   currentProcess: string;
   requestDetail: string;
   businessImpact: string;
   successMetric: string;
-  notes: string;
-  attachments: AttachmentRecord[];
+  attachments: string[];
+  assignee: Assignee;
+  requester?: string;
+  notes?: string;
   createdAt: string;
   activity: ActivityItem[];
 };
+
+export type StageCounts = Record<Stage, number>;

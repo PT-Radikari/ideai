@@ -1,210 +1,183 @@
-import type {
-  ActivityItem,
-  AttachmentKind,
-  AttachmentRecord,
-  Ticket,
-} from "./types";
+import { type Assignee, type Ticket } from "./types";
 
-export const STORAGE_KEY = "opsflow-kanban-v1";
+export const STORAGE_KEY = "opsflow-v2";
 
-export function buildActivity(
-  title: string,
-  detail: string,
-  createdAt = new Date().toISOString(),
-): ActivityItem {
-  return { title, detail, createdAt };
+export const SEED_TICKETS: Ticket[] = [
+  {
+    id: "t1",
+    code: "OPT-420381",
+    stage: "Issue Request",
+    title: "Automate QA evidence collection",
+    division: "QA",
+    service: "Audit & Compliance",
+    priority: "Medium",
+    currentProcess:
+      "Analysts compare spreadsheets against ERP exports by hand and flag mismatches over email.",
+    requestDetail: "Introduce a validation workflow before month-end review.",
+    businessImpact: "Cut validation time from 5h to 1h, fewer mismatch escapes.",
+    successMetric: "Validation time under 1h, under 5% mismatch escape rate.",
+    attachments: ["audit_sample.xlsx"],
+    assignee: "Nadia Putri",
+    createdAt: "2026-05-11T08:00:00Z",
+    activity: [
+      {
+        title: "Ticket created",
+        detail: "Entered through guided intake.",
+        createdAt: "2026-05-11T08:00:00Z",
+      },
+    ],
+  },
+  {
+    id: "t2",
+    code: "OPT-420117",
+    stage: "Review",
+    title: "Attendance cleanup standardization",
+    division: "BPO",
+    service: "Attendance Management",
+    priority: "High",
+    currentProcess:
+      "Supervisors update three attendance sheets and one payroll summary file before cutoff.",
+    requestDetail:
+      "Group missing logs, suspicious overtime, and unresolved leave entries into one review queue.",
+    businessImpact: "Cut pre-payroll cleanup from 7 touchpoints to 2.",
+    successMetric: "Seven touchpoints down to two.",
+    attachments: ["attendance_sample.xlsx"],
+    assignee: "Rizal Hidayat",
+    createdAt: "2026-05-10T18:00:00Z",
+    activity: [
+      {
+        title: "Review started",
+        detail: "Business analyst validating scope.",
+        createdAt: "2026-05-12T09:20:00Z",
+      },
+      {
+        title: "Ticket created",
+        detail: "Entered through guided intake.",
+        createdAt: "2026-05-10T18:00:00Z",
+      },
+    ],
+  },
+  {
+    id: "t3",
+    code: "OPT-419998",
+    stage: "Production",
+    title: "Payroll reconciliation tool",
+    division: "MPO",
+    service: "Payroll",
+    priority: "High",
+    currentProcess: "Manual export and matching across four systems.",
+    requestDetail: "Auto-match line items and surface only mismatches.",
+    businessImpact: "Reduce close cycle by 1.5 days.",
+    successMetric: "Close cycle shortened by 1.5 days.",
+    attachments: ["payroll_export.csv"],
+    assignee: "Melissa Tan",
+    createdAt: "2026-05-09T06:00:00Z",
+    activity: [
+      {
+        title: "Build started",
+        detail: "Workflow accepted after revision.",
+        createdAt: "2026-05-12T08:00:00Z",
+      },
+    ],
+  },
+  {
+    id: "t4",
+    code: "OPT-419800",
+    stage: "Revision",
+    title: "Invoice validation logic",
+    division: "MPO",
+    service: "Invoice Reconciliation",
+    priority: "Medium",
+    currentProcess: "Email-based mismatch flagging between teams.",
+    requestDetail: "Refactor flagging into a shared real-time queue.",
+    businessImpact: "Fewer mid-month escalations.",
+    successMetric: "Escalation rate reduced by 60%.",
+    attachments: [],
+    assignee: "Nadia Putri",
+    createdAt: "2026-05-08T12:00:00Z",
+    activity: [
+      {
+        title: "Sent for revision",
+        detail: "Reviewer requested narrower scope.",
+        createdAt: "2026-05-12T06:00:00Z",
+      },
+    ],
+  },
+  {
+    id: "t5",
+    code: "OPT-419552",
+    stage: "Testing",
+    title: "Client onboarding checklist",
+    division: "Shared Services",
+    service: "Client Onboarding",
+    priority: "Low",
+    currentProcess: "Each team uses its own checklist and sends screenshots through chat.",
+    requestDetail: "Standardize the checklist and approvals into a single flow.",
+    businessImpact: "Cut onboarding coordination from two days to same-day.",
+    successMetric: "Onboarding coordination completed same-day.",
+    attachments: ["checklist_v3.xlsx"],
+    assignee: "Melissa Tan",
+    createdAt: "2026-05-07T03:00:00Z",
+    activity: [
+      {
+        title: "Testing started",
+        detail: "UAT team validating the flow.",
+        createdAt: "2026-05-12T09:35:00Z",
+      },
+    ],
+  },
+  {
+    id: "t6",
+    code: "OPT-419310",
+    stage: "Deployment",
+    title: "Vendor handoff tracker",
+    division: "Procurement",
+    service: "Vendor Management",
+    priority: "Low",
+    currentProcess: "Spreadsheet shared by email with unclear owners per handoff.",
+    requestDetail: "Create a live tracker with explicit owner per handoff.",
+    businessImpact: "Faster vendor escalation cycles.",
+    successMetric: "Escalation response time cut in half.",
+    attachments: [],
+    assignee: "Rizal Hidayat",
+    createdAt: "2026-05-05T10:00:00Z",
+    activity: [
+      {
+        title: "Deployed",
+        detail: "Tracker rolled out to procurement leads.",
+        createdAt: "2026-05-12T04:00:00Z",
+      },
+    ],
+  },
+];
+
+export function formatRelativeTime(iso: string): string {
+  const elapsedMs = Date.now() - new Date(iso).getTime();
+  const minutes = Math.round(elapsedMs / 60000);
+
+  if (minutes < 1) {
+    return "just now";
+  }
+  if (minutes < 60) {
+    return `${minutes}m ago`;
+  }
+
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
+
+  return `${Math.round(hours / 24)}d ago`;
 }
 
-export function buildTicketCode(): string {
+export function buildCode(): string {
   return `OPT-${String(Date.now()).slice(-6)}`;
 }
 
-export function trimText(value: string, maxLength: number): string {
-  if (value.length <= maxLength) {
+export function sanitizeAssignee(value: string): Assignee {
+  if (value === "Nadia Putri" || value === "Rizal Hidayat" || value === "Melissa Tan") {
     return value;
   }
 
-  return `${value.slice(0, maxLength - 1)}...`;
-}
-
-export function formatDate(value: string): string {
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
-
-export function formatTimestamp(value: Date): string {
-  return new Intl.DateTimeFormat("en", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(value);
-}
-
-export function formatFileSize(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`;
-  }
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-export async function normalizeAttachments(files: File[]): Promise<AttachmentRecord[]> {
-  return Promise.all(files.filter((file) => file.size > 0).map(normalizeAttachment));
-}
-
-async function normalizeAttachment(file: File): Promise<AttachmentRecord> {
-  const kind: AttachmentKind = file.type.startsWith("image/")
-    ? "image"
-    : /\.(csv|xlsx|xls|ods)$/i.test(file.name)
-      ? "spreadsheet"
-      : "file";
-
-  return {
-    id: crypto.randomUUID(),
-    name: file.name,
-    size: file.size,
-    type: file.type || "application/octet-stream",
-    kind,
-    previewDataUrl:
-      kind === "image" && file.size < 900_000 ? await readFileAsDataUrl(file) : "",
-  };
-}
-
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ""));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
-export function buildSeedTickets(): Ticket[] {
-  return [
-    {
-      id: crypto.randomUUID(),
-      code: "OPT-420381",
-      stage: "Review",
-      title: "Automate invoice validation before MPO month-end close",
-      division: "MPO Finance",
-      service: "Invoice Reconciliation",
-      requester: "Nadia Putri",
-      priority: "High",
-      currentProcess:
-        "Analysts compare vendor spreadsheets against ERP exports by hand and flag mismatches over email.",
-      requestDetail:
-        "Introduce a validation workflow that checks duplicate invoice numbers, missing PO references, and amount mismatches before month-end review.",
-      businessImpact:
-        "Reduce late close risk and prevent repeat rework across the finance operations team.",
-      successMetric:
-        "Shrink validation time from 5 hours per batch to under 1 hour while reducing mismatch escapes by 80%.",
-      notes: "ERP export format is stable. Vendor submission formats vary.",
-      attachments: [],
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString(),
-      activity: [
-        buildActivity(
-          "Review started",
-          "Business analyst is validating scope and source files.",
-          new Date(Date.now() - 1000 * 60 * 40).toISOString(),
-        ),
-        buildActivity(
-          "Ticket created",
-          "Request entered through the guided intake channel.",
-          new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString(),
-        ),
-      ],
-    },
-    {
-      id: crypto.randomUUID(),
-      code: "OPT-420117",
-      stage: "Production",
-      title: "Consolidate BPO attendance cleanup into one exception queue",
-      division: "BPO Operations",
-      service: "Attendance Management",
-      requester: "Rizal Hidayat",
-      priority: "Medium",
-      currentProcess:
-        "Supervisors update three different attendance sheets and a final summary file before payroll cutoff.",
-      requestDetail:
-        "Create a single intake and exception handling flow that groups missing logs, suspicious overtime, and unresolved leave entries.",
-      businessImpact:
-        "Reduce duplicate checks across team leads and payroll administrators.",
-      successMetric:
-        "Cut pre-payroll attendance cleanup from 7 touchpoints to 2 and reduce missed exception follow-ups.",
-      notes: "Attendance logs come from biometric export plus HRIS leave records.",
-      attachments: [],
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(),
-      activity: [
-        buildActivity(
-          "Build approved",
-          "Workflow logic accepted after revision.",
-          new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-        ),
-      ],
-    },
-    {
-      id: crypto.randomUUID(),
-      code: "OPT-419552",
-      stage: "Testing",
-      title: "Standardize client onboarding handoff for shared services",
-      division: "Shared Services",
-      service: "Client Onboarding",
-      requester: "Melissa Tan",
-      priority: "Low",
-      currentProcess:
-        "Each team uses its own checklist and sends screenshots through chat during onboarding approval.",
-      requestDetail:
-        "Standardize the checklist, collect approvals in one place, and make missing documents visible before production handoff.",
-      businessImpact:
-        "Reduce onboarding delays and improve audit readiness.",
-      successMetric:
-        "Cut average onboarding coordination delay from 2 business days to same-day completion.",
-      notes: "Need to align legal, finance, and delivery onboarding checkpoints.",
-      attachments: [],
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 60).toISOString(),
-      activity: [
-        buildActivity(
-          "Testing started",
-          "UAT team is validating the checklist flow.",
-          new Date(Date.now() - 1000 * 60 * 25).toISOString(),
-        ),
-      ],
-    },
-  ];
-}
-
-export function buildStandaloneSampleTicket(): Ticket {
-  return {
-    id: crypto.randomUUID(),
-    code: buildTicketCode(),
-    stage: "Issue Optimization Request",
-    title: "Reduce manual QA evidence collection",
-    division: "Quality Assurance",
-    service: "Audit and Compliance",
-    requester: "Sample PIC",
-    priority: "Medium",
-    currentProcess:
-      "Team members capture screenshots manually, rename files by hand, then compile evidence in spreadsheets before review.",
-    requestDetail:
-      "Create a structured evidence submission flow with required fields and a cleaner approval handoff.",
-    businessImpact:
-      "Reduce turnaround time for recurring audits and prevent missing evidence.",
-    successMetric:
-      "Shorten evidence preparation from 3 hours to 45 minutes per audit cycle.",
-    notes: "Sample ticket injected from the intake screen.",
-    attachments: [],
-    createdAt: new Date().toISOString(),
-    activity: [
-      buildActivity(
-        "Ticket created",
-        "Sample ticket added from the intake screen.",
-      ),
-    ],
-  };
+  return "Unassigned";
 }
