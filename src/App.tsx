@@ -1,5 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
-import { buildCode, formatRelativeTime, sanitizeAssignee, SEED_TICKETS, STORAGE_KEY } from "./lib";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { buildCode, formatRelativeTime, sanitizeAssignee } from "./lib";
+import {
+  addComment,
+  createTicket,
+  fetchTickets,
+  KanbanApiError,
+  moveTicket,
+  subscribeToChanges,
+  updateTicket,
+} from "./lib/kanban";
+import IssuePage from "./pages/IssuePage";
 import {
   ASSIGNEES,
   CLUSTERS,
@@ -51,6 +61,22 @@ type IntakeFormState = {
   attachments: string;
 };
 
+// ---------------------------------------------------------------------------
+// Hash-based routing
+// ---------------------------------------------------------------------------
+
+function parseHashRoute(): { view: "board"; taskId?: string } | { view: "intake" } {
+  const hash = window.location.hash.replace(/^#\/?/, "");
+  const parts = hash.split("/").filter(Boolean);
+  if (parts[0] === "tasks" && parts[1]) {
+    return { view: "board", taskId: decodeURIComponent(parts[1]) };
+  }
+  if (parts[0] === "intake") {
+    return { view: "intake" };
+  }
+  return { view: "board" };
+}
+
 type DrawerDraft = {
   assignee: (typeof ASSIGNEES)[number];
   note: string;
@@ -89,45 +115,100 @@ function parseAttachments(input: string): string[] {
     .filter(Boolean);
 }
 
-function loadInitialTickets(): Ticket[] {
-  if (typeof window === "undefined") {
-    return SEED_TICKETS;
-  }
-
-  try {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved) as Ticket[];
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
-    }
-  } catch {}
-
-  return SEED_TICKETS;
-}
+// ---------------------------------------------------------------------------
+// Kanban API integration
+// ---------------------------------------------------------------------------
+//
+// The board is now backed by the Hermes kanban API (see src/lib/kanban.ts).
+// `tickets` is a local cache of server state. Mutations go through the adapter
+// (optimistic where possible, reverted on error) and an SSE subscription keeps
+// the cache in sync with server-side changes. If the API is unreachable on
+// initial load we show an error banner and render an empty board instead of
+// silently seeding from localStorage — the user must see that the backend is
+// down.
+// ---------------------------------------------------------------------------
 
 export default function App() {
-  const [tickets, setTickets] = useState<Ticket[]>(() => loadInitialTickets());
-  const [view, setView] = useState<View>("board");
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [route, setRoute] = useState(parseHashRoute);
   const [cluster, setCluster] = useState<Cluster>("all");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<Priority | "">("");
   const [divisionFilter, setDivisionFilter] = useState("");
   const [toast, setToast] = useState("");
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<IntakeFormState>(() => createEmptyForm());
+  const [draggedTicketId, setDraggedTicketId] = useState<string | null>(null);
 
-  const selectedTicket = useMemo(
-    () => tickets.find((ticket) => ticket.id === selectedId) ?? null,
-    [selectedId, tickets],
-  );
+  // Track tickets currently mid-mutation so SSE echoes for them don't race
+  // the optimistic update and clobber the freshest local copy.
+  const inflightRef = useRef<Set<string>>(new Set());
+  const markInflight = useCallback((id: string) => {
+    inflightRef.current.add(id);
+  }, []);
+  const unmarkInflight = useCallback((id: string) => {
+    inflightRef.current.delete(id);
+  }, []);
+
   const [drawerDraft, setDrawerDraft] = useState<DrawerDraft | null>(null);
 
+  // Sync hash changes into route state
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(tickets));
-  }, [tickets]);
+    const onHashChange = () => setRoute(parseHashRoute());
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
 
+  // Derive view + selectedId from route
+  const view: View = route.view;
+  const selectedId = route.view === "board" && "taskId" in route ? route.taskId ?? null : null;
+
+  const selectedTicket = useMemo(() => {
+    if (!selectedId) return null;
+    return tickets.find((t) => t.id === selectedId) ?? null;
+  }, [selectedId, tickets]);
+
+  const reloadFromServer = useCallback(async () => {
+    try {
+      const fresh = await fetchTickets();
+      setTickets(fresh);
+      setApiError(null);
+    } catch (err) {
+      setApiError(
+        err instanceof KanbanApiError
+          ? `Kanban API unavailable: ${err.message}`
+          : `Kanban API unavailable: ${(err as Error).message}`,
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Initial load + SSE subscription for server-driven reconciliation.
+  useEffect(() => {
+    let unsubscribe: (() => void) | null = null;
+
+    reloadFromServer();
+
+    unsubscribe = subscribeToChanges((event) => {
+      const id = event.taskId;
+      // Ignore echoes for tickets we're mid-mutation on — our optimistic copy
+      // is authoritative until our own PATCH/POST returns.
+      if (inflightRef.current.has(id)) return;
+
+      // For any change, refetch the single ticket and merge it in. The shim's
+      // SSE payload carries the event row, not the full task, so a targeted
+      // fetch is simpler and avoids divergent shadow types.
+      void reloadFromServer();
+    });
+
+    return () => {
+      unsubscribe?.();
+    };
+  }, [reloadFromServer]);
+
+  // Toast auto-dismiss.
   useEffect(() => {
     if (!toast) {
       return;
@@ -236,7 +317,109 @@ export default function App() {
 
   function openBoardForCluster(nextCluster: Cluster) {
     setCluster(nextCluster);
-    setView("board");
+    window.location.hash = "#/";
+  }
+
+  function navigateToTask(taskId: string) {
+    window.location.hash = `#/tasks/${encodeURIComponent(taskId)}`;
+  }
+
+  function navigateToBoard() {
+    window.location.hash = "#/";
+  }
+
+  function navigateToIntake() {
+    window.location.hash = "#/intake";
+  }
+
+  function setSelectedId(taskId: string | null) {
+    if (!taskId) {
+      navigateToBoard();
+      return;
+    }
+    navigateToTask(taskId);
+  }
+
+  function setView(nextView: View) {
+    if (nextView === "board") {
+      navigateToBoard();
+      return;
+    }
+    navigateToIntake();
+  }
+
+  function applyOptimisticStageMove(ticket: Ticket, nextStage: Stage, detail: string) {
+    markInflight(ticket.id);
+    setTickets((current) =>
+      current.map((item) =>
+        item.id === ticket.id
+          ? {
+              ...item,
+              stage: nextStage,
+              activity: [
+                createActivity(`Moved: ${ticket.stage} → ${nextStage}`, detail),
+                ...item.activity,
+              ],
+            }
+          : item,
+      ),
+    );
+  }
+
+  function persistStageMove(ticket: Ticket, nextStage: Stage, successMessage: string, errorPrefix: string, previousStage: Stage) {
+    setToast(successMessage);
+    moveTicket(ticket.id, nextStage)
+      .then((updated) => {
+        setTickets((current) =>
+          current.map((item) => (item.id === updated.id ? updated : item)),
+        );
+      })
+      .catch((err) => {
+        setApiError(
+          err instanceof KanbanApiError
+            ? `${errorPrefix}: ${err.message}`
+            : `${errorPrefix}: ${(err as Error).message}`,
+        );
+        setToast(`${errorPrefix}. Reverted.`);
+        setTickets((current) =>
+          current.map((item) =>
+            item.id === ticket.id ? { ...item, stage: previousStage } : item,
+          ),
+        );
+      })
+      .finally(() => unmarkInflight(ticket.id));
+  }
+
+  function handleStageMove(ticket: Ticket, nextStage: Stage, detail: string, errorPrefix: string) {
+    if (nextStage === ticket.stage) {
+      return;
+    }
+    if (inflightRef.current.has(ticket.id)) {
+      setToast(`${ticket.title}: update in progress`);
+      return;
+    }
+    applyOptimisticStageMove(ticket, nextStage, detail);
+    persistStageMove(ticket, nextStage, `${ticket.title}: ${ticket.stage} → ${nextStage}`, errorPrefix, ticket.stage);
+  }
+
+  function handleCardDragStart(ticketId: string) {
+    setDraggedTicketId(ticketId);
+  }
+
+  function handleCardDragEnd() {
+    setDraggedTicketId(null);
+  }
+
+  function handleStageDrop(stage: Stage) {
+    if (!draggedTicketId) {
+      return;
+    }
+    const ticket = tickets.find((item) => item.id === draggedTicketId);
+    setDraggedTicketId(null);
+    if (!ticket) {
+      return;
+    }
+    handleStageMove(ticket, stage, "Moved via drag and drop.", "Failed to move ticket");
   }
 
   function handleCardClick(ticket: Ticket, advanceStage = false) {
@@ -248,24 +431,7 @@ export default function App() {
       }
 
       const nextStage = STAGES[currentIndex + 1];
-      setTickets((current) =>
-        current.map((item) =>
-          item.id === ticket.id
-            ? {
-                ...item,
-                stage: nextStage,
-                activity: [
-                  createActivity(
-                    `Moved: ${ticket.stage} → ${nextStage}`,
-                    "Shifted via Shift+click.",
-                  ),
-                  ...item.activity,
-                ],
-              }
-            : item,
-        ),
-      );
-      setToast(`${ticket.title}: ${ticket.stage} → ${nextStage}`);
+      handleStageMove(ticket, nextStage, "Shifted via Shift+click.", "Failed to move ticket");
       return;
     }
 
@@ -293,9 +459,13 @@ export default function App() {
       return;
     }
 
+    // Optimistic update
+    const id = selectedTicket.id;
+    markInflight(id);
+    const previousTicket = selectedTicket;
     setTickets((current) =>
       current.map((ticket) =>
-        ticket.id === selectedTicket.id
+        ticket.id === id
           ? {
               ...ticket,
               stage: drawerDraft.stage,
@@ -309,6 +479,105 @@ export default function App() {
       ),
     );
     setToast("Update saved");
+
+    const patch: Partial<Ticket> = {};
+    if (drawerDraft.stage !== previousTicket.stage) {
+      // moveTicket handles both stage and body re-encoding
+      moveTicket(id, drawerDraft.stage)
+        .then(() => {
+          if (drawerDraft.assignee !== previousTicket.assignee) {
+            return updateTicket(id, { assignee: drawerDraft.assignee });
+          }
+        })
+        .then((updated) => {
+          if (updated) {
+            setTickets((current) =>
+              current.map((t) => (t.id === updated.id ? updated : t)),
+            );
+          }
+        })
+        .catch((err) => {
+          setApiError(
+            err instanceof KanbanApiError
+              ? `Save failed: ${err.message}`
+              : `Save failed: ${(err as Error).message}`,
+          );
+          setTickets((current) =>
+            current.map((t) => (t.id === id ? previousTicket : t)),
+          );
+        })
+        .finally(() => unmarkInflight(id));
+    } else if (drawerDraft.assignee !== previousTicket.assignee) {
+      patch.assignee = drawerDraft.assignee;
+      updateTicket(id, patch)
+        .then((updated) => {
+          setTickets((current) =>
+            current.map((t) => (t.id === updated.id ? updated : t)),
+          );
+        })
+        .catch((err) => {
+          setApiError(
+            err instanceof KanbanApiError
+              ? `Save failed: ${err.message}`
+              : `Save failed: ${(err as Error).message}`,
+          );
+          setTickets((current) =>
+            current.map((t) => (t.id === id ? previousTicket : t)),
+          );
+        })
+        .finally(() => unmarkInflight(id));
+    }
+
+    // Also add comment if there's a note
+    if (drawerDraft.note.trim()) {
+      addComment(id, "user", drawerDraft.note.trim()).catch(() => {});
+    }
+  }
+
+  async function computeHmac(payload: string, secret: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
+    return (
+      "sha256=" +
+      Array.from(new Uint8Array(sig))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("")
+    );
+  }
+
+  async function fireWebhook(ticket: Ticket): Promise<void> {
+    const apiBase =
+      import.meta.env.VITE_KANBAN_API || "http://localhost:8645";
+    const proxyUrl = `${apiBase}/api/webhook-proxy`;
+
+    const payload = JSON.stringify({
+      taskId: ticket.id,
+      title: ticket.title,
+      division: ticket.division,
+      service: ticket.service,
+      priority: ticket.priority,
+      currentProcess: ticket.currentProcess,
+      requestDetail: ticket.requestDetail,
+      businessImpact: ticket.businessImpact,
+      successMetric: ticket.successMetric,
+      attachments: ticket.attachments,
+    });
+
+    const response = await fetch(proxyUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: payload,
+    });
+    if (!response.ok) {
+      throw new Error(`Webhook failed: ${response.status} ${response.statusText}`.trim());
+    }
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -357,11 +626,40 @@ export default function App() {
       activity: [createActivity("Ticket created", "Submitted through guided intake.")],
     };
 
+    // Optimistic: add locally, then persist to API
     setTickets((current) => [nextTicket, ...current]);
-    setSelectedId(nextTicket.id);
     setForm(createEmptyForm());
-    setView("board");
-    setToast("Submitted to Issue Request");
+    navigateToBoard();
+    setToast("Request submitted. Blueprint decomposition started.");
+
+    markInflight(nextTicket.id);
+    createTicket(nextTicket)
+      .then((created) => {
+        // Replace the optimistic placeholder with the server-assigned ticket
+        setTickets((current) =>
+          current.map((t) => (t.id === nextTicket.id ? created : t)),
+        );
+        // Fire webhook fire-and-forget — ticket creation already succeeded
+        fireWebhook(created).catch((err) => {
+          setToast(
+            err instanceof Error
+              ? `Request created. Blueprint webhook failed: ${err.message}`
+              : "Request created. Blueprint webhook failed.",
+          );
+        });
+      })
+      .catch((err) => {
+        setApiError(
+          err instanceof KanbanApiError
+            ? `Failed to create ticket: ${err.message}`
+            : `Failed to create ticket: ${(err as Error).message}`,
+        );
+        // Revert optimistic add
+        setTickets((current) =>
+          current.filter((t) => t.id !== nextTicket.id),
+        );
+      })
+      .finally(() => unmarkInflight(nextTicket.id));
   }
 
   return (
@@ -446,6 +744,38 @@ export default function App() {
         </nav>
 
         <div className="main">
+          {apiError && (
+            <div
+              className="api-error-banner"
+              style={{
+                background: "#fef2f2",
+                borderBottom: "1px solid #fecaca",
+                color: "#991b1b",
+                padding: "8px 16px",
+                fontSize: "13px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span>⚠ {apiError}</span>
+              <button
+                type="button"
+                onClick={() => { setApiError(null); reloadFromServer(); }}
+                style={{
+                  background: "transparent",
+                  border: "1px solid #991b1b",
+                  borderRadius: "4px",
+                  color: "#991b1b",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  padding: "2px 8px",
+                }}
+              >
+                Retry
+              </button>
+            </div>
+          )}
           <header className="topbar">
             <div className="topbar-row1">
               <h2 className="topbar-title">{view === "board" ? "Pipeline Board" : "New Request"}</h2>
@@ -532,7 +862,9 @@ export default function App() {
             )}
           </header>
 
-          {view === "board" ? (
+          {selectedId ? (
+            <IssuePage taskId={selectedId} onBack={navigateToBoard} />
+          ) : view === "board" ? (
             <div className="content">
               <div className="board-outer sk sk--strong">
                 <div className="board-inner">
@@ -540,7 +872,16 @@ export default function App() {
                     {STAGES.map((stage) => {
                       const stageTickets = filteredTickets.filter((ticket) => ticket.stage === stage);
                       return (
-                        <section key={stage} className="col sk sk--col" aria-label={stage}>
+                        <section
+                          key={stage}
+                          className={`col sk sk--col ${draggedTicketId ? "is-drop-target" : ""}`}
+                          aria-label={stage}
+                          onDragOver={(event) => event.preventDefault()}
+                          onDrop={(event) => {
+                            event.preventDefault();
+                            handleStageDrop(stage);
+                          }}
+                        >
                           <div className="col-header">
                             <span className="col-name">{stage}</span>
                             <span className="col-count sk sk--count">{stageTickets.length}</span>
@@ -552,6 +893,9 @@ export default function App() {
                                 type="button"
                                 className={`card sk sk--card ${selectedId === ticket.id ? "is-active" : ""}`}
                                 title="Click to inspect • Shift+click to advance stage"
+                                draggable
+                                onDragStart={() => handleCardDragStart(ticket.id)}
+                                onDragEnd={handleCardDragEnd}
                                 onClick={(event) => handleCardClick(ticket, event.shiftKey)}
                               >
                                 <p className="card-code">{ticket.code}</p>

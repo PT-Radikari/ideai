@@ -1,7 +1,5 @@
 import { type Assignee, type Ticket } from "./types";
 
-export const STORAGE_KEY = "opsflow-v2";
-
 export const SEED_TICKETS: Ticket[] = [
   {
     id: "t1",
