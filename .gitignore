@@ -1,4 +1,12 @@
 hidden/
 node_modules/
 dist/
+.DS_Store
 .codex-skill-wrappers/
+.env
+.env.local
+.env.example
+yes
+yes.pub
+*.pem
+*.key
